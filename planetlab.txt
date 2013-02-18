@@ -1,0 +1,23 @@
+Configuration file for the Planetlab deployment
+
+To log into planetlab:
+ssh -l diku_INF5510 -i .ssh/id_planetlab  planetlab1.sics.se
+
+There are two projects deployd, Shredhub-jsp and Shredhub-backbone:
+
+1.Shredhub-backbone
+
+
+
+
+
+2.Shredhub-jsp
+
+  Database:
+  Shredhub-jsp uses Postgres 8.4.6
+
+
+  To administrate the db log into to the postgresuser:
+  >sudo su postgres
+  Run psql:
+  >psql -d shredhub -U postgres
