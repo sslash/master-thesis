@@ -11,7 +11,7 @@ WORK PROCESS
 3.> git pull
 4.> mvn clean package/install
 5.> Stop tomcat 
-6.cp the war file into the tomcat web apps folder
+6. remove the old warfile from tomcat webapps folder, and cp the new war file into the tomcat web apps folder
 7.> Start tomcat
 8. each time you want add code stuff locally, push the code to git and redo the process above 
 
