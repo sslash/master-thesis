@@ -1,10 +1,19 @@
 Configuration file for the Planetlab deployment
 
 To log into planetlab:
-ssh -l diku_INF5510 -i .ssh/id_planetlab  planetlab1.sics.se
+>ssh -l diku_INF5510 -i .ssh/id_planetlab  planetlab1.sics.se
 There are two projects deployd, Shredhub-jsp and Shredhub-backbone.
 
-
+WORK PROCESS
+1.log into planetlab
+2.Start mongo and postgres
+2.Go into all three maven projects and do:
+3.> git pull
+4.> mvn clean package/install
+5.> Stop tomcat 
+6.cp the war file into the tomcat web apps folder
+7.> Start tomcat
+8. each time you want add code stuff locally, push the code to git and redo the process above 
 
 
 STATUS
@@ -16,7 +25,8 @@ should concern fine tuning the projects.
 Possible Todo's:
  - Go through the source code and further simplify the Java code (for Shredhub-JSP)
 
- - Replicate the database
+ - Replicate the database. But this is lol, beacuse it requires a lot of work for the 
+PostgreSQL instance. PostgreSQL 9.* has support for streaming replication, but still. Lot of work.
  
 
 
