@@ -15,6 +15,9 @@ WORK PROCESS
 7.> Start tomcat
 8. each time you want add code stuff locally, push the code to git and redo the process above 
 
+If you need to copy files to planetlab:
+> scp <filename> diku_INF5510@planetlab1.sics.se:~/master/
+
 
 STATUS
 In this section I will outline the remaining tasks for the project.
