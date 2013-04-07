@@ -1,0 +1,433 @@
+% CHOOSING WEB FRAMEWORK
+%			
+%		Choosing an overall architecture for a web application
+%		very much depends on the kind of programming language
+%		one chooses to use. There are lots of programming
+%		languages that has great support for web development,
+%		like Java, Microsofts C\#, Ruby, Javascript, Php,
+%		Python and so forth, and they all have their own
+%		separate ways of building a web app. Therefore it is
+%		important to define the goals for the application,
+%		then pick a language that has support for a framework
+%		that would best fulfill the applications
+%		requirements. However, there are some fundamental
+%		features that should always be provided by the web
+%		framework. These includes low level implementations
+%		like network communication, database management,
+%		authentication and session management etc. Of course,
+%		on top of this the given web framework should be
+%		efficient. Every platform implements its own threading
+%		model when network requests comes in, and there is a
+%		big variation in how the frameworks solves this issue
+%		(this is also tightly connected to the web server that
+%		hosts the application).  
+%		
+%		 In my application there are some fundamental design goals that must be taken into consideration. First of all, the application must be able to be deployed in the cloud, through a PAAS offering, so it can easily scale to many simultaneous web requests. Second, I do not want a heavy weight framework that requires a lot of unnecessary boilerplate code or lots deployment specific configurations. In other words, it should be easy to set up so I don't have to worry about anything else then programming my application. Thirdly it should be easy to integrate the system with other software components, and the web framework should be loosely coupled from the applications business logic so I do not have to depend on a concrete framework. This gives me the freedom to swap out any of the modules I would feel like changing. 
+%		Having such a "pluggable" framework helps me test my
+%		application with various technologies. For instance,
+%		if I decide to use a specific key-value based
+%		persistence layer, instead of a JDBC layer, it should
+%		only be a quick modification to do the switch. Or, if
+%		I decide to store my videos in the Dropbox cloud
+%		storage instead of Amazon e3 cloud storage, it should
+%		be done without harming any of the existing source
+%		code. Also it has a great advantage if the given
+%		framework is backed by a big community of
+%		developers. This way it is easier to get good
+%		documentation and to ask for support if I get stuck in
+%		implementation problems
+%		\cite{importantFRConsiderations}.  
+%				
+%	\section{Choosing a web framework}
+%		 My first approach for designing the system takes a classical 3-tier architectural approach. I have chosen to use Java as the main backend programming language, mostly because there are so many good and various frameworks dedicated to build web applications. The Java community is large, and most public frameworks are open source projects. This leads to ease of support and   readily available documentation. Obviously it is a great advantage that my major programming skills comes with the Java language, but this should not have an impact on what platform I choose to build my application with. This project is an objective study of what kind of architecture would best suit my application. 
+%		 
+%		 When choosing to use Java as the backend programming language, there are some platform specific decisions to make. First of all, one must decide what web application framework to use. To meet with the framework goals already mentioned I have chosen to use Spring \cite{spring} with Spring MVC (see chapter 2 for an introduction). In the earlier days, before Spring was introduced, a traditional approach was to build web applications around a full-blown EJB container \cite{Johnson04} . However, this approach is very heavyweight, and it is not supported by many cloud platform-as-a-service offerings, meaning one would have to either use an infrastructure-as-a-service offering, or host the application themselves. Naturally this leads to deployment challenges, especially if one would want to add more web or application servers. Spring on the other hand is more lightweight and has the opportunity to be deployed to a platform-as-a-service cloud offering, like Cloud Foundry \cite{cloudfoundry} or Heroku \cite{heroku}.
+%		 
+%		  With Spring comes a great implementation of an inversion of control container \cite {ioc} which provides a component based structure for my application by following the dependency inversion principle \cite {dip}. The container works as an object factory, and makes it easy to add new components to my application while at the same time hiding the implementation details of the added behavior. An alternative way of composing the application with external modules is to use the service locator design pattern \cite {j2ee}, which is a common approach taken in Java EE based applications. Dhrubojoyoti Kayal \cite{Kayal} shows how the service locator pattern can be implemented in Java Spring applications. However considering Spring already has an IOC implementation, it would just lead to a lot of boilerplate code to assemble components using the Service locator pattern. 
+%		  
+%		  Another nice feature with Spring is that it has built in support for both relational- and noSQL database management implementations, as well as transaction support. On top of this it supports annotation-based declarations making it easy to customize database and transaction configurations using java annotations.  These features makes it easy to build a clean business logic layer that is nicely separated from the low-level details that I don't want to mix with my business logic code. However, the main reason I chose Spring, is because it comes with the web application framework Spring MVC (See chapter 2). Spring MVC is built on top of Java http servlets, but hides the low-level details through annotations and simple bean configuration.  It has support for rendering Jsp views, user authentication by applying the Spring security framework,  REStfull web service handling (including xml and JSON support), file uploading and lots of other features. 
+%		  
+%		  There are other lightweight alternatives that I could have chosen instead of Spring MVC, like Struts, WebWork, Wicket and many more.  However, I believe Spring MVC has the cleanest implementation model in terms of separation of concerns, plus that it is backed by the whole Spring framework. Another interesting java web framework that has recently gained popularity is Play! \cite {play}. This framework has a very different threading model then traditional frameworks based on java servlet technology. It provides an efficient session management solution by being stateless, which is the nature of modern, RESTfull web applications \cite[chapter 5]{rest}. It would be interesting to compare my Spring implementation with a similar solution using Play. However that topic is out of scope for this master's thesis. 
+	
+		%\section{General discussion} % 15 sider
+		%My main options on todays situation, and careful thought on these options.
+		%I can do this and that, but I choose to do this etc
+		%Here I will discuss what I believe is a good solution for my problem statement. I will say why I believe choosing this %architecture  (servers, layers and tiers, programming language etc) is better 
+	%then that, why it is important to have a service oriented architecture in a web 2.0 application, why I will focus on %programming with the object-oriented principles I choose to write about, what are 
+	%the challenges with doing that, what are the benefits. Then I should discuss the use of design patterns in my project, what %are the thoughts of using them in a real world scenario. Not completely 
+	%sure what to say here...
+	
+	
+	
+%% SECURITY STUFF
+
+%Spring will therefore create interception filters that verifies the user each time he tries to access a url. Here is a snippet of my security configuration file:
+%		  \begin {lstlisting}[language=xml]	
+%		  <intercept-url pattern="/theShredPool*" access="ROLE_SHREDDER" />
+%			<intercept-url pattern="/battle*" access="ROLE_SHREDDER" />
+%			<intercept-url pattern="/battle/**" access="ROLE_SHREDDER" />	
+%			<intercept-url pattern="/shredder*" access="ROLE_SHREDDER" />
+%			<intercept-url pattern="/shredder/**" access="ROLE_SHREDDER" />	
+%			
+%			  <authentication-manager>
+%		   		<authentication-provider>
+%					<jdbc-user-service data-source-ref="dataSource" 
+%			   users-by-username-query="
+%			      select Username, Password, true
+%			      from Shredder where Username=?" 
+%	 
+%			   authorities-by-username-query="
+%			      select s.Username, ur.Authority from Shredder s, UserRole ur 
+%			      where s.Id = ur.ShredderId and s.Username =?  "  
+%			/>
+%		   </authentication-provider>
+%		</authentication-manager>
+%		  \end{lstlisting}
+
+
+
+%% SESSION STUFF
+%In Shredhub, Shreds are created very often, and hence they should be written to the database immediately (direct cache) when they are created, instead of being temporarily stored in memory. This is the motivation for the decision I have stated in the above listing. The object that holds information about the logged in user should stay on the session object, together with the list of battles he participates in, and the list of fanees. Now it might be that these data's will change (for instance that a new battle request comes in). In this case there are some alternatives to choose. First of all, objects that the user can change himself (like profile details and adding new fanees), is just a matter of updating the session object server-side and write to the database each time this happens. The challenge comes to when external events happens, like if someone challenges the user for a new battle, or someone accepts a battle the user has initiated. In this scenario it is preferable for the user to get the update as quickly as possible. The easiest solution for this is to not update the session object at all, in which case the user would only get the newest updated data each time he logs into the app. Another solution is to update the session every time the user enters the shred pool (naturally, since the shred pool acts as the "home area" in the web app). In which case the update will not be exactly real time (depending on how the user uses the app of course), but probably good enough. A third solution is to use the observer pattern by implementing a thread that propagates the update to the designated session objects when an event like this happens. This is called a "push" model and is a bit more complex to implement. A final solution is that the client "polls" for updates in a particular time interval. Now, my architecture is built around a model where the server always responds with a full html page. If the client wants to receive only a particular data object (for instance a new battle), he should not have to receive a full html and see the whole page render each and every x seconds. A preferable solution is to make ajax polls or something similar which I will look into in another architecture I propose later in this project. Therefore, at this point I will confine myself with option 1. 
+%	
+%	As for the objects that are not persisted on the session object, they will be updated every time the page is refreshed. A pitfall with this is that if the user stays on the same page for a long time, he will not receive any updates. A dynamic behavior is preferable (as stated in the application goals earlier), which would require either some form of push or pull model. I described this scenario in the section above, so again I will state that the manual update model is good enough for this architecture, and state that a better solution will be implemented in the architecture I will look at later in this project. 
+%
+
+
+
+
+Another example with input validation based on the result from SpringMVC's validation performed on the Shredder object:
+
+\begin{lstlisting}
+ @RequestMapping( value ="/newShredder", method = RequestMethod.POST)
+		public String newShredder( 
+				@Valid Shredder shredder,
+				BindingResult result,
+				HttpSession session,
+				@RequestParam(value = "profileImage", required = false) MultipartFile profileImage,
+				Model model) {
+				
+			if (result.hasErrors()) {
+				model.addAttribute("errorMsg", "Error: " + result.getFieldError().getDefaultMessage() );
+				return "/errorPage";
+			}
+	
+			try {
+				shredderService.addShredder(shredder, profileImage);
+			} catch (ImageUploadException e) {
+				result.reject("Error creating user: " + e.getMessage());
+				model.addAttribute("errorMsg", "Failed to upload the profile image " );
+				return "/errorPage";
+			}
+			
+			return "redirect:/login";
+		}
+\end{lstlisting}
+
+Behind the scenes, SpringMVC will check that the parameters entered in the html form are valid in terms of the requirements specified in the Shredder class. If there is an error, the BindingResult instance in my controller function would have the hasErrors() function return true, in which         cause I simply return an error message back to the user. Using 
+        regular expressions gives me the power to decline all input
+        forms that does not match the given pattern. 
+
+
+
+
+
+
+
+
+
+
+  A big problem with the template approach is that
+                  there is a lot of mixed responsibilities and
+                  languages. The for loop itself is very big, and
+                  contains both html, javascript and jsp
+                  logic. Imagine having to add more advanced features
+                  that requires more use of jsp references mixed with
+                  javascript handling. The source code for the whole
+                  page as it is is 254 lines of code, plus 146 lines
+                  that are included from other general jsp pages, like
+                  the header and side navigation. And this is not
+                  including the external javascript and css libraries!
+                  It is also important to notice the big amount of
+                  code that is generated for a simple if-else
+                  condition in the top of the source. It only gets
+                  worse when more logic like this has to be
+                  implemented. Lets show how ugly this can get when
+                  the jsp tags must perform more view logic. This
+                  shows part of the code that generates a battle page
+                  (again, I have omitted (lots of) irrelevant markup
+                  code): 
+		  
+		  \begin{lstlisting}[language=html]	
+	<!-- Display who's the leader -->
+	<c:choose>
+		<c:when test='${battle.battler.battlePoints > battle.battlee.battlePoints}'>
+			<p> ${battle.battler.shredder.username} Leads </p>
+		</c:when>
+		<c:when test='${battle.battlee.battlePoints > battle.battler.battlePoints}'>
+			<p> ${battle.battlee.shredder.username} Leads </p>
+		</c:when>								
+		<c:otherwise>
+			<p> It's even </p>
+		</c:otherwise>
+	</c:choose>							
+	
+	<c:forEach var="shred" items="${battle.battler.shreds}">
+			<legend>Round ${shred.round}</legend>
+			<!--Display a shred like in the last example, including video, rating, comments and shred details -->	
+	</c:forEach>
+							
+			<!-- If the currently logged in shredder is next up to shred, -->
+			<!-- And he is the battler in the battle, meaning he is on the left side of the screen --> 
+			<!-- Then display a button to upload a shred -->
+			<c:if test="${(battle.currentBattler.id == shredder.id) && (battle.battler.shredder.id == shredder.id)}">
+					
+				<a href="#battleModal" role="button">Shred back!</a>
+				<!-- Battle modal -->
+				<div class="modal hide fade" id="battleModal" aria-hidden="true">
+						<button type="button" class="close" data-dismiss="modal"
+						aria-hidden="true">x</button>
+						<h3 id="myModalLabel">Battle shredder</h3>
+					<!-- video upload -->
+					<form method="POST" class="form-horizontal"
+						enctype="multipart/form-data"
+						
+						<!-- This programmer unfriendly piece of code statement builds a url that triggers the controller handler for uploading a shred in a battle -->
+						action="<c:url value='/battle'/>/${battle.id}/shred/${battle.currentBattler.id}/fn:length(battle.battler.shreds) + 1}">
+						<label class="control-label" for="shredVideo">Shred video</label>
+						<input name="shredVideo" type="file" placeholder="Browse" />
+						
+						<!-- Hidden field that must be added to the http request.. Not easy to spot this one! -->
+						<input type="hidden" name="shredderId" 	value="${shredder.id}">
+						<button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+						<button class="btn btn-primary">Enter</button>
+					</form>
+				</c:if>
+	
+				<!--  For all shreds that belongs to the battlee, on the right hand side -->
+					<c:forEach var="shred" items="${battle.battlee.shreds}">
+					<!-- Do the EXACT same thing as showed above, but for the left hand side shredder (battlee)-->
+				</c:forEach>
+					
+			<!-- If the currently logged in shredder is next up to shred, -->
+			<!-- And he is the battlee in the battle, meaning he is on the right side of the screen --> 
+			<!-- Then display a button to upload a shred -->
+			<c:if test="${(battle.currentBattler.id == shredder.id) && (battle.battlee.shredder.id == shredder.id)}">
+				<!-- Do the exact same thing as showed above, but for the left hand side shredder (battlee)-->
+			</c:if>
+		  \end{lstlisting}   
+		  Obviously, this code is not pretty and contains a lot of duplication. The code that implements the battler's shreds is duplicated with a few variations on the right hand side, for the battlee. It is hard to avoid this when I am restricted to jsp tags, and plain html.  Again, the jsp if conditions is not very pretty. If I was to add more features, I would probably have to extend the code with more duplication, as it is hard to create reusable components with this technology. All in all, the implementation violates both the DRY principle, and the SRP principle. Another issue is that the jsp statements tend to violate the law of demeter \cite{pragmatic}, by accessing a particular objet through a hierarchy of pointer references. For instance: \emph{<c:if test="\$\{(battle.currentBattler.id == shredder.id) \& \& (battle.battler.shredder.id == shredder.id)\}">}. Using such references makes the code more error prone, should for instance the data structure in my domain layer change. Such references are difficult to avoid in jsp, because they cannot access server-side functions, only variables (through getter-methods). Unfortunately, I am using such referencing in various parts of my app, but I try to avoid it. 
+		  
+		  I want to pinpoint out one last example of how "smelly" the front-end code gets with my template approach. This example shows the ShredNews implementation. Each time a shred-newsItem is hovered, it should display a box with type-specific content.
+	\begin{lstlisting}[language=html]	
+	<script type="text/javascript">
+	
+	function dopopover(id, description, content ) {
+		$('#shred-'+id).popover(data={
+			trigger:'hover',
+			placement: 'left',
+			content: content,
+			title: description,
+			animation:true
+		});
+	}
+	
+	function createShredContent(tags, rating) {
+		tags = tags.replace(/,\s*$/, "");
+		return "<p>Tags: " + tags + "</p>" + "<p> Rating: " + rating + "</p>";
+	}
+	
+	function createBattleContent(round, status, shredder, shreddee) {
+		var str = "<p>"+shredder + " vs. " + shreddee + "</p>";
+		str += "<p>Round " + round + "</p>";
+		str += "<p>Status: " + status +"</p>";
+		return str;	
+	}
+	function createShredderContent(adress, description, guitars) {
+		guitars = guitars.replace(/,\s*$/, "");
+		var str = "<p>Lives in: " + adress +"</p>";
+		str += "<p>"+description +"</p>";
+		str += "<p>Shreds on: "+guitars+"</p>";
+		return str;	
+	}
+	</script>
+	
+	<div class="span3">
+		<div class="well sidebar-nav">
+			<ul class="nav nav-list">
+				<li class="nav-header">Shred news</li>
+				
+				<c:forEach var="newsitem" items ="${news}" varStatus="status">
+				<%  
+				ShredNewsItem item = ((ShredNewsItem) pageContext.getAttribute("newsitem"));
+				if (item instanceof NewShredFromFanee ){		 
+				%>
+				
+				<!-- Create the list of tags for the shred -->
+				<c:set var="tagsList" value=""></c:set>
+				<c:forEach var="tag" items="${newsitem.shred.tags}">
+					<c:set var="tagsList" value="${tag.label}, ${tagsList}" /> 
+				</c:forEach>		
+							
+				<li>
+				<a rel="popover" 
+					id="shred-${status.count}" 
+					onmouseover="dopopover(${status.count},
+					'${newsitem.shred.description}', 
+					createShredContent('${tagsList}', ${newsitem.shred.rating.rating}));"
+					href="<c:url value='/shredder/'/>${newsitem.shred.owner.id}">
+					${newsitem.shred.owner.username} just added a new shred at ${newsitem.timeCreated}</a>
+				</li>
+		
+				<%
+				} else if (item instanceof BattleShredNewsItem ) {
+				%>
+				<li>
+				<a
+				id="shred-${status.count}" 
+				onmouseover="dopopover(${status.count},
+				'Battle','${newsitem.battleShred.owner.username} shredded in round ${newsitem.battleShred.round}');"
+				href="<c:url value='/battle/'/>${newsitem.battleId}">${newsitem.battleShred.owner.username}
+				 shredded in a battle at ${newsitem.timeCreated}</a></li>
+				
+				<%
+				} else if (item instanceof NewBattleCreatedNewsItem ) {
+				%>
+				<li>
+				<a
+				id="shred-${status.count}"
+				onmouseover="dopopover(${status.count},
+					'Battle', 
+					createBattleContent(${newsitem.battle.round},'${newsitem.battle.status}', '${newsitem.battle.battler.shredder.username}', '${newsitem.battle.battlee.shredder.username}'));" 
+				 href="<c:url value='/battle/'/>${newsitem.battle.id}">${newsitem.battle.battler.shredder.username}
+				 just entered a Battle against ${newsitem.battle.battlee.shredder.username} at ${newsitem.timeCreated}</a></li>
+				
+				<%
+				} else if (item instanceof NewPotentialFaneeNewsItem ) {
+				%>
+				<!-- Create the list of guitars. Don't bother doing equiptment, it's such a hazzle! -->
+				<c:set var="guitars" value=""></c:set>
+				<c:forEach var="g" items="${newsitem.shredder.guitars}">
+					<c:set var="guitars" value="${g}, ${guitars}" /> 
+				</c:forEach>
+				<li> 
+				<a
+				id="shred-${status.count}"
+				onmouseover="dopopover(${status.count},
+					'${newsitem.shredder.username}', 
+					createShredderContent('${newsitem.shredder.adress}','${newsitem.shredder.description}','${guitars}' ));"		
+				 href="<c:url value='/shredder/'/>${newsitem.shredder.id}">${newsitem.shredder.username} just joined ShredHub.
+				You are shred-alike. Check out his shreds.</a></li>
+				<% } %>
+				</c:forEach>
+		  
+		  \end{lstlisting}
+		  
+		  
+		  The code absolutely violates the single-responsibility-principle in that it has a big set of if-elses for each type of news item. If I were to add more news items I would have to add another else clause. This is only intentional, because I don't want to able to do something like ShredNewsItem.htmlView that uses inheritance to create a concrete shredNewsItem view implementation as an html generated java String. The reason is as I have already mentioned, back-end code should have no clue of how it is displayed in the front-end. Therefore, I have to check the type of the java object, and create 4 customized views in the jsp page. Obviously this gets very ugly, because I have to use both jsp-scriptlets, jstl tags and javascript in the same pile of code. Now, it may be that there are ways to do this with a cleaner and more concise implementation, but it will never save me from the problem with using template languages; it has to be rendered on the server, so the code is not accessible from javascript statements on the browser. This creates a difficult cooperation between jsp and javascript, and special "hacky" solutions has to be done to solve minor implementation details.
+		  
+
+
+
+
+
+
+
+
+
+
+ \subsubsection{Identifying advantages with the middle tier architecture}
+	The middle tier has a nice and coherent implementation. It has a clear separation from the presentation tier and the database tier, which makes it easy to swap out any of these tiers. Each service class represents a logical abstraction in the application,  which makes the design very intuitive.
+	
+	\subsubsection{Identifying limitations and drawbacks with the middle tier architecture}
+	It really isn't that much too say about the limitations with this tier. However, some of the service classes are quite large and it could be preferable to divide these classes into smaller ones to avoid too much responsibility. 
+	
+	
+	
+	
+	
+	
+	
+	
+			\subsubsection{Identifying limitations and drawbacks with the data tier architecture}
+		One drawback is that the DAO objects tend to get really big with lots of functions. However, considering the amount of queries the application requires, this is probably unavoidable. Another thing to take into consideration is that the DAO pattern does provide an additional layer of complexity. As mentioned earlier the active record pattern avoids this, since the domain objects knows how to "crud" themselves, but I concluded that the tradeoff of having complex domain objects was not worth it.
+		 Also, its a big challenge to define how much is the optimal amount of data that should be fetched in the various queries when the server should not maintain any in memory objects (making lazy loading more difficult). Obviously, some sort of caching that does not use the server's memory capacity would be preferable. 
+		 A final remark is that considering all the available non-sql technologies that has recently hit the marked, I have chosen to see if there is a potential for improvement in terms of efficiency, scalability and a cleaner architecture, by swapping out my data tier with a no-sql data tier. 
+		
+		\subsubsection{Identifying limitations and drawbacks with the data tier architecture}
+		The DAO pattern provides a coherent data object relational mapping implementation that is nicely decoupled from the service layer and the domain objects. Using sql directly in java tend to be cluttering, but it does give me a lot of query flexibility. Debugging is definitely easier then it would be using an ORM implementation like hibernate. Really, the advantage of having full control is so much better then being stuck behind some massive complex ORM framework. 
+	
+		\subsection{Discussion}
+		In this section I will wrap up the most important fallacies and pitfalls with architecture 1.0, and propose an improvement that I will choose to implement for architecture 2.0. Below I have categorized the primary weaknesses in the application.
+		
+		\begin{description}
+			\item[Front-end code] \hfill \\
+			The front end code is implemented by mixing many different technologies like JSP, scriptlets, javascript, html and css. Considering the high requirement for a dynamic user interface, I should have had a clean, flexible and structured front-end implementation, with separate concerns, no language mixes, and no 500+ lines of source code for each html page.
+			\item[Html response] \hfill \\
+			One complete html page is returned for each and every http request from the user. This is definitely overkill, considering the client might even be staying on the same page, but just wants to get a different set of shred videos. The result slow feedback and waste of bandwidth. 
+			
+			\item[No support for 3rd party client applications or mobile clients]
+			3rd party clients and mobile client application's prefer another format then html when using my application. With a simple format like xml or json, and the data types being application domain objects instead of html pages, other applications could find my application useful, and I could easily implement mobile versions for my application. 
+	
+			\item[Media content stored in the deployment folder]
+			This solution is neither secure, scalable or efficient. Another solution is critical.
+			
+			\item[Complex database handling]
+			The application requires a lot of complex queries. The more advanced the business logic gets, the higher gets the demand for a simple and intuitive way of "crudding". Also, performance and scalability is essential. The faster and more scalable the better. Maybe its time to reevaluate the old relational database and compare it with a no-sql approach. 
+				
+		\end{description}
+		
+	\subsubsection{Comparing solutions}
+	To solve these problems I need to rethink architecture 2.0 completely. One attempt to help make the front-end code better is to move more behavior from the back-end to the front-end, creating a thick client. A thick front-end client can be built using a javascript framework that supports the MVC design pattern. This pattern has showed its elegans since it was introduced in 1979 by Trygve Reenskaug. 
+	The problem with the http responses being html pages encourages me to introduce a RESTfull api on the server side, who's responsibility is to return json or xml objects, given some url. This could solve a lot of problems, because now, suddenly I would have a public API that can be used by 3rd party clients, and my mobile applications. In addition, the high bandwidth waste would be minimized, because the amount of data sent in responds is highly reduced. However, it does require that the javascript MVC client knows how to build the web pages given the data offered by the REST api.  
+	As for the media content, it should be stored in the cloud by some cloud storage service like Amazon or Windows Azure. 
+	Finally, the data tier needs to be experimented with. I should try some various technologies and implementations to verify what is the best solution for persisting Shredhub. 
+		
+		
+		
+		
+		 PERFORMANCE STUFF!!!
+		 
+The first test is the initial loading of \textit{www.shredhub.com}. This page consists of a login button, some images, formatted text and thumbnail pictures of the top 9 most popular shred-videos. The page has a few interactive functions like picture animations and functions to open up and hide a new window to display a video when a thumbnail image of a shred is clicked.
+
+
+\begin{table}[htdp]
+\caption{default}
+\begin{center}
+\begin{tabular}{|c|c|c|}
+\hline
+& \textbf{Architecture 1.0} & \textbf{Architecture 2.0} \\ \hline
+Fetching markup and scripts & 260ms & 420ms \\ \hline
+Fetching images & 81ms & 150ms  \\ \hline
+Total responds time & 405ms & 570ms \\ \hline
+Time spent on server & 63ms & 55ms \\ \hline
+
+\end{tabular}
+\end{center}
+\label{www.shredhub.com}
+\end{table}%
+
+Architecture 1.0 performs best in this test. The reason is that architecture 2.0 loads a whole lot of small javascript files as well as html template files that are meant to be stitched together in the browser. Each such request requires an explicit TCP connection with the server. Therefore, architecture 2.0 spends some time pulling files from the server, while architecture 1.0 spends less time on this, because it needs less data files. However, less time is spent on the server for architecture 2.0, because in this case the server doesn't have to spend time rendering a complete html page. This might lead to better backend scalability.
+
+
+
+\subsection{Test 3 - Database performance and scalability}
+\textit{Goal: Determine how fast a given database query executes, and how many simultaneous queries can be executed}\\
+\textit{Tests: Database throughput, efficiency and scalability}\\
+This test investigates the pros and cons for using a key-value based database versus a relational database for the application. Architecture 2.0 is built with MongoDB \cite{mongo} which is a document-oriented key value database, while Architecture 1.0 is built with PostgreSQL\cite{postgresql} which is a relational database management system. All the queries that has been executed in this test has been done with various numbers of simultaneous executions. This is to simulate parallel database execution so that the database implementation's scalability characteristic can be determined. The testing is done by using Apache JMeter, which is a tool to perform performance testing on apache server-based applications. 
+
+The queries that has been used for testing are:
+
+\begin{enumerate}
+\item \textit{Read - Get a shredder based on id}
+\item \textit{Read - Get all fanees for a shredder based on id}
+\item \textit{Read - Get suggested fanees for a shredder based on id}
+\item \textit{Write - Add a new shred}
+\item \textit{Write - Add a new fanee relationship}
+\item \textit{Update - Increase shredder level for a shredder}
+\item \textit{Update - Increase rating for a shred}
+\item \textit{Delete - Delete a comment on a shred}
+\end{enumerate}
+
+All of the queries has ben perfumed with the following amount of simultaneous executions: \textit{1-5-10-100-1000-10000-50000-100000}.
+
+

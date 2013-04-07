@@ -1,0 +1,336 @@
+	\chapter{Introduction}     % 3-5 sider
+	\section {Motivation}
+Web 2.0 is a popular term for the second generation
+                World Wide Web. A new paradigm has emerged with the
+                Internet's changing usage pattern that is increasingly
+                becoming more social \cite{web20}. In  this scenario the users are
+                actively involved in the web services like blogs,
+                chatting, wikis and other social interaction
+                schemes. A characteristic property with such an
+                application is that there are a lot of simultaneous
+                users all in which communicates with each other
+                asynchronously on the Internet. Users are often
+                registered on a given web page, where they will be
+                connected together in a "social network" . Based on
+                the information they store about themselves they can
+                get various suggestions like what movies a user would
+                like, friends he or she may know, suitable dining
+                places etc.  
+
+A typical Web 2.0 application is a system that brings
+                a challenging requirement for it's software
+                architecture. In particular, it requires fast and
+                repetitive data lookups, ease of change in domain,-and
+                presentation logic, a highly interactive user
+                interface with a nice look and feel,and especially support for a high number of
+                simultaneous users. To meet with these requirements,
+                application developers has to pursue a software
+                design that is both scalable, resource efficient, easy
+                to maintain and highly responsive. The latter
+                requirement is mostly concerning the need for
+                interactive behavior on the given web. This is
+                increasingly becoming more and more fundamental for
+                modern web sites, now that the performance capabilitites for
+                most client devices makes it possible to execute
+                resource demanding web applications.
+
+
+The classical web application architecture has in the last
+        decade followed a monolithic three tier model. The client interacts
+        with the server by following url links that leads to new HTML pages. 
+        Almost every interaction the client makes with the web page
+        leads to a server request, in which case the server does some processing
+        and returns an HTML page. The presentation tier of the application is 
+        normally composed of one or more HTML pages that contains some
+        independent Javascript functions that exists to implement interactive behavior.
+        This can in some cases lead to a complicated, unstructured combination of HTML
+        markup and presentation logic. However, having a thin client that is dependent on a 
+        central server, has the advantage of having a clean and structured backend
+        implementation in a familiar object-oriented language like Java or C\#. This
+        does promote a good implementation of business logic. 
+        
+        Traditionally, web pages that has persistent storage have mostly been
+        using relational databases. This technology is widely adopted and familiar
+        for most web developers. The reason is that it is both efficient, has wide
+        industry support, and provides a familiar programming interface (query language).
+        
+        However, the rise of web 2.0 has brought some interesting new technologies like HTML5,
+        noSQL databases, cloud computing services, and a wide range of
+        javascript web frameworks enhanced to develop large scale javascript-heavy web applications.
+        These technologies simplifies the development of interactive web
+        applications that can be run in scalable and efficient cloud
+        environments. In this context, one has seen a fundamental
+        change in the way developers tend to design modern web
+        applications. First of all, one has seen a decoupling of the client from the server.
+        Developers try to limit the amount of requests the client has to the server, and 
+        avoid having the server return complete and prepared HTML pages, but rather
+        small and fine-grained data objects. This way, the client
+        is responsible for rendering and changing the HTML pages, and purely use 
+        the server as an interface to manipulate the applications domain objects.        
+        In addition, seeing that the clients are able to perform more CPU-heavy
+        processing then before, one has seen an increasing amount of business logic
+        being perform on the client's device instead of on the server. 
+        
+        Finally, with the increase of cloud service offerings and big data applications,
+        the need for scalable and efficient persistence technologies has led to the development
+        of noSQL database technologies. These technologies has proven to be highly efficient
+        and scalable when deployed in web applications, and are becoming very popular in the
+        web community. noSQL is not a term for one specific type of database, but
+        it is a collection of various database technologies. These all have in common
+        that they lack the relational structure that comes from sql databases, and
+        does not structure the data in a schema. They are horizontaly scalable and
+        supports distribution much better the sql databases. The technology 
+        is designed to work well on extremely large data structures.
+        
+        The motivation for this thesis is to study these two different approaches
+        to designing web applications. The traditional approach has been a de-facto
+        standard for the last decade, and certainly brings a solid reference model
+        to designing good web architectures. However, new web technologies and 
+        architectural ideas makes it interesting to find improvements in the traditional
+        model.         
+        
+        
+\section {Problem statement}
+
+Current Internet devices like desktop computers, smart phones and
+        tablet devices has a high capability for performing resource
+        demanding processing jobs and intensive network transmissions.
+        However, the traditional three-layered web architecture is
+        often built with an emphasis on limiting the amount of work performed in the
+        client's device (a thin client model), in order to achieve the
+        best possible performance gains for the end user, considering the large amount of
+        processing power that is normally provided by a back-end
+        infrastructure (REF). 
+
+        It is interesting to study how web applications can benefit
+        from moving much of the business logic into the client's device
+        instead of letting the server perform most of the
+        computation. The fact that a classical web 2.0 application
+        requires lots of simultaneous users with high amounts of data
+        requests, makes it interesting to see if such an architecture
+        might result in less load on the server. However, having lots
+        of business logic on the client means lots of javascript
+        code. Now, it so happens that the javascript programming
+        language has ever since its dawn of time been used just as a
+        supplement to HTML pages, just to provide the necessary
+        dynamic behavior. The language itself is not
+        intended to create big object oriented systems, and it is
+        therefore challenging to build a big and maintainable
+        Javascript application. This has led to the development of various javascript
+        frameworks that serves to cope with the challenge of creating
+        such applications. These frameworks are often centered around
+        an MVC-style architecture, except that they normally does not
+        completely conform to the design pattern. The reason is that
+        these javascript frameworks often has their own individual
+        implementations of the controller part of the pattern. Therefore, it is
+        normal to name the pattern simply MV*. The star character defines
+        the part that varies from the controller module in the MVC pattern.
+        One example is the MVP pattern, where the P stands for presentation. The
+        presentation layer implements the mediator design pattern
+        \cite{facade} which communicates with both the view, and the model. In this
+        scenario, the communication is event driven, in which the
+        presentation layer would bind to the events generated by the
+        model, and publish the result of these events to the view
+        layer. 
+
+        Another interesting scenario in the world of web 2.0 is the
+        massive amount of data that is being persisted in these kinds
+        of applications. It is the users that creates the
+        application's content through blogs, wikies and social
+        interactions, and the data magnitude expands with the increase of
+        users and their interconnections. With the demand to persist
+        these big structures and to perform efficient operations on
+        them, one has seen some new database technologies arising from
+        big IT companies like Google, Amazon and Facebook.
+The noSQL movement began in early 2009 (although the term was
+first used by Carlo Strozzi \ref{bigtable} in 1998 
+for his open-source relational database implementation that lacked a SQL interface), and has led to a
+big amount of various persistence technologies that
+        distincts from the traditional relational
+        database. The name noSQL is referred to in the community as
+        \textit{not-only SQL}, and is generally being categorized into 
+        document-oriented databases, graph databases, and
+        key-value databases (note that there are further taxonomies that
+        are being used, but these are the most popular categories).
+        The common factor with these noSQL
+        databases is that they have showed to perform great in cloud
+        environments because they can easily scale to multiple servers
+        (unlike the normal SQL database). Naturally this fits great
+        with the requirement of a traditional web 2.0 application,
+        because it requires high performance in data lookups even when
+        the size of the data quantity is extremely large. Still
+        however, many developers seems to favor the normal SQL
+        database implementations because of its elegant schema design,
+        efficiency, and also the fact that most developers has
+        profound knowledge and experience in the field of relational database
+        management. The question of wether a noSQL database
+        has any benefits compared to using a traditional
+        database in a thick client/thin server architecture is an
+        interesting topic. Besides the scalability question, which
+        seems fairly self-proven, there are other not so revealing
+        problem statements, like what sorts of queries are executed the most
+        efficient in the two architectures, which architecture
+        performs best when deployd on one single server, and on multiple servers. And
+        finally, how easy is it to implement the databases
+        in a given web application, in terms of programmer
+        friendliness and maintainability.   
+	
+The problem statement in this thesis is centered around two
+        main topics:
+
+\begin {enumerate}
+\item Can a thick client web architecture help make
+          interactive web 2.0 applications perform better. This must
+          be valuated in terms of scalability on the server, and
+          response time for the end user. Security is also an issue,
+          but is only limited to the prevention of injection attacks
+          and authentication. The problem statement applies both in
+          a single server environment, and in a cloud environment.
+          Also, are there any programming benefits from applying a
+          javascript MV* framework in the client application in terms
+          of programmer friendliness, maintainability and other coding
+          guidelines like cohesion and decoupling.
+ 
+\item	What kind of persistence technology works best in a
+          classical web 2.0 application in terms of efficiency and
+          scalability. Is it always better to use one of the other, or
+          are there any special types of operations or queries that are better
+          solved by any of the particular database
+          techonlogies. Programming satisfaction must also be a design
+          goal.
+\end{enumerate}
+				
+\section{Goals}
+	The goal for this thesis is to design and implement a
+                classical web 2.0 application that I will use as a
+                base to experiment with various software architectures
+                and technologies. These
+                experiments serve to investigate how modern web
+                technologies can be applied to achieve a scalable and
+                responsive web application that delivers dynamic and
+                interactive content to a big amount of simultaneous
+                users. The goals are to find the bottlenecks and
+                benefits in a classical three-tier monolithic thin
+                client architecture, using a traditional relational
+                database. At the same time, I want to find out if
+                there are any benefits and pitfalls from applying a
+                thick javascript client architecture, with a simple
+                backend that runs a noSQL database.  
+	
+	In a classic web 2.0 application it is at most
+                important to have a code base that makes
+                it easy to add new features. Therefore a major goal of
+                this project is to design a software architecture that
+                is flexible and maintainable, so that one can easily add new behavior
+                and modify existing features. It is a known fact that
+                javascript code tend to be tightly coupled with the
+                HTML and CSS styling it dwells in, and therefore, it is an important
+        design criteria that the thick client architecture is both
+        loosely coupled, well-structured and code-intuitive. I will strive to
+        apply appropriate design patterns both on the backend and
+        especially on the client, to enforce a flexible and
+        maintainable code base.  
+
+The final goal is to achieve a cross platform solution for the
+        application that makes it easy to build new client
+        applications on top of the current backend solution. This is a
+        fundamental requirement for any web 2.0 application,
+        considering current Internet users uses a various range of
+        devices, including mobile phones, tablets and normal desktop
+        computers. For example, it should be possible to implement a
+        native iPhone app, or windows 8 tablet app or a third party
+        web page that, that will use the service offered by the
+        application's backend implementation. A design criteria is to
+        achieve reusable components, so that much code can be reused
+        without having to build many customized solutions.
+
+\section{Approach}
+	Given the goal of this thesis is to experiment with
+                various software architectures for modern web 2.0
+                applications, a good way to get good and reliable
+                results is to design and implement a software
+                application, and use this as a base for
+                experiments. For this thesis I have built a
+                traditional web 2.0 application that conforms to the user requirements
+                stated above. The application is a social networking
+                site where users connect to each other, creates and
+                posts blogging content, commenting, tagging and
+                rating. The application is built twice from the
+                start with two completely different architectures. The
+                first is with a classical 3-tier, thin client model,
+                i.e a thick business layer that serves html content to
+                the user each time a html form is triggered. The
+                front-end contains a lot of UI logic built in
+                javascript and mixed with HTML tags, and it uses a
+                relational database. The latter prototype has a thick
+                client model with all the business logic and UI logic
+                handled in the client's browser. It uses a noSQL
+                database for persistence. To get the results I am
+                looking for, I have performed extensive systems-testing
+                on both prototypes, and compared the results. The
+                tests has been run both when the application was
+                deployed on a single server, and in a cloud environment.
+
+	\section{Proposed solution}
+%	
+%	My solution to this problem is to implement a three-tier web application that I built without applying any particular design patterns. I used this as a base to experiment with various design 
+%patterns. The patterns I chose to use was mainly a mixture of the patterns first proposed by the gang of four, architectural patterns first defined by Martin Fowler in the book enterprise architecture 
+%patterns, and also some other design patterns that has gotten public awareness in the recent years. The former patterns was used to build the domain data structure, to cope with the complexity of 
+%a typical social network. The patterns proposed by Martin Fowler was used at a higher abstraction level in my application to make the architecture become more flexible. This was an important 
+%achievement, because it became easy to add new behavior to the application without having to modify existing code. To verify the outcome of the design, I would actively add new behavior to the 
+%application for flexibility verification. I would also run exhaustion tests to see if the patterns could provide any scalability benefits. 
+	
+	\section{Work done}
+%	During the work on this thesis I have read many articles and books on design patterns because It was important to get a good understanding of all the patterns that has gotten public 
+%familiarity. To learn how to adopt them into my own coding style, I tried building various prototypes where I would apply the patterns I had read about. I wanted to get an understanding of how the 
+%patterns could work and collaborate in a bigger software application, and especially one that had some complex software requirements. The solution was to build a classic web 2.0 application and 
+%apply various design patterns, compare them and do testing based on some well-defined metrics. I made a report of the results I got after running the stated tests, and draw a conclusion based on 
+%these. 
+	
+	\section{Results}
+%	The domain layer of the three-tier web application is built around the domain model design pattern. It uses the Identity map pattern as an in-memory cache, and lazy loading techniques to 
+%achieve scalability and efficient data requests. The reason I chose this architecture was that I found out that the Identity map pattern fits nicely into a web application that requires frequent lookups 
+%into an in-memory data structure. It was easy to use the lazy-loading pattern with the identity map, which again made it easy and clear what data was in memory, and what was written to the 
+%database. Having this advantage made it easy to scale the application to meet the scalability requirements of a classical web 2.0 application.  
+%	To integrate privacy rules with the data structure, I use the proxy design pattern which makes it easy to have one abstraction of a user, but multiple implementations depending on the privacy 
+%rules. To implement a flexible matching feature in the test-application, I use the decorator pattern so I can easily add and remove matching premisses for users. Finally, to make it easy to add and 
+%modify existing business logic, I use the command design pattern that is built around a service layer. 
+	
+	\section{Contributions}
+%	Too early to say something about
+	
+	\section{Evaluation}
+	
+	
+	\section{Criteria}
+%	How does this differ from the results section?
+%	
+	
+	%\section{Web 2.0 applications}
+	%Include the problem of the thesis, some under issues and related work.
+	%How the problem turned out to be. Explain the different chapters
+	
+	%\subsection{What are they}
+	
+	
+	%\subsection{Challenges}
+	
+	
+	%\subsection{My solution}
+	%There are a lot of guidelines for building flexible and maintainable software systems, and there is especially one technique that has got a lot of %focus ever since they were introduced, 
+%namely design patterns. These are general solutions for a re-occurring problem that software %developers has had to deal with over the years. However, these are not the one and only solution 
+%for a software system, but rather guidelines %for a small problem. What these patterns have in common is that they tend to focus on implementing a solution with a high focus on flexibility %and 
+%simplicity. Software developers has had a lot of success in applying design patterns for building parts of their application, while on the %other hand there has been some criticism saying that 
+%striving to use a pattern often leads to overly complex designs. With this in mind, I will look %at various design patterns that may help solve many of the problems occurring when building a typical 
+%web 2.0 application, and at the same %see if incorporating well-known object-oriented principles helps making the system scalable, flexible and efficient. 
+	%\subsubsection{}
+	
+	%\section{Problem statement}
+	%The problem statement for this thesis is as follows:
+	%\begin{itemize}
+	  %\item How to build a Web 2.0 application, and especially how to make it become flexible, scalable and efficient
+	  %\item How to apply various design patterns in an application and make them cooperate efficiently and elegantly across a multi-tiered application that incorporates different programming 
+%languages
+	  %\item Are there any disadvantages by using the patterns, like needless complexity or increased coding time
+	  %\item What are good object-oriented principles, and do they help building a web 2.0 application
+	%\end{itemize}

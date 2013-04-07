@@ -1,0 +1,507 @@
+\documentclass[UKenglish]{ifimaster}  %% ... or USenglish or norsk or nynorsk
+\usepackage[T1]{fontenc,url}
+\usepackage{listings}
+\usepackage{babel,textcomp,uiosloforside,varioref,graphicx,mathpple,csquotes}
+\usepackage{tabularx}
+\usepackage{wrapfig}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage[backend=biber,style=numeric,sort=nyt]{biblatex} %% VIKTIG FOR \AA F\AA TIL BIBER
+\addbibresource{library.bib}
+\usepackage{color}
+
+\usepackage[latin1]{inputenc}   %% eller applemac (om du har en Mac) 
+                                %% eller utf8 (om du bruker det).\usepackage{sidecap}
+\urlstyle{sf}
+\lstset{ %
+language=Java,                % choose the language of the code
+basicstyle=\footnotesize,       % the size of the fonts that are used for the code
+numbers=left,                   % where to put the line-numbers
+numberstyle=\footnotesize,      % the size of the fonts that are used for the line-numbers
+stepnumber=1,                   % the step between two line-numbers. If it is 1 each line will be numbered
+numbersep=5pt,                  % how far the line-numbers are from the code
+backgroundcolor=\color{white},  % choose the background color. You must add \usepackage{color}
+showspaces=false,               % show spaces adding particular underscores
+showstringspaces=false,         % underline spaces within strings
+showtabs=false,                 % show tabs within strings adding particular underscores
+frame=single,           % adds a frame around the code
+tabsize=2,          % sets default tabsize to 2 spaces
+captionpos=b,           % sets the caption-position to bottom
+breaklines=true,        % sets automatic line breaking
+breakatwhitespace=false,    % sets if automatic breaks should only happen at whitespace
+escapeinside={\%*}{*)}          % if you want to add a comment within your code
+}
+
+
+%% NOTE TO SELF:
+% Les gjennom alle disse kommentarene når jeg leser gjennom oppgaven. Se til at alt er oppnådd!
+
+
+%% Notater om det å skrive master:
+
+% - B\or ha åpne ender som kan taes opp i diskusjon
+% - Det som arbeides med bør være formulert som et spørsmål
+% - Tenk: Hvordan skal neste versjon av programmet være?
+% - God oppgave: 
+%     - Gode drøftelser av alternativer ved avgjørende punkter i arbeidet
+%     - Skisser to til fire ulike alternativer. Drøft for eller mot. Konkluder med hvorfor du valgte som du gjorde.
+% - Et godt kapittel, ca en side om tilbakeblikk: innrøm evt feil eller dårlige valg jeg har gjort. 
+% Skisser flere mulige måter å jobbe videre med området
+% 
+
+\title{Investigating Modern Web Applications}        %% ... or whatever
+\subtitle{From Thin Clients and SQL to Thick Clients and noSQL}         %% ... if any
+\author{Michael K. Gunnulfsen}                      %% ... or whoever 
+\date{Automn 2012}                    %% ... or whenever
+% \bibliography{mybib}                  %% ... or whatever
+\begin{document}
+\uiosloforside[kind={Master thesis}]{}
+
+%\frontmatter{}
+%\maketitle{}
+
+%\chapter*{Abstract}	% 1/3 side	
+\tableofcontents{}
+%\listoffigures{}
+%\listoftables{}		
+%\chapter*{Preface}                  
+
+%\mainmatter{}
+
+\part{Introduction}    
+\input {introduction} % 5 sider
+%% Problemstillingen, samt hvordan den ble som den ble
+% Kort gjennomgang av resten avkapitlene
+                
+\include{background} % 20 sider
+% Innføring i støtte-områder etc for oppgaven (rettet mot oppgavens problemstilling)
+						
+\include{design} % 15 sider
+% Hovedvalg og vurdering av disse.
+% Etter veiledning med Arne, skal dette kapittelet drøfte dagens løsninger av begge arkitekturer.
+% Så skal det naturlig komme inn i hvilken arkitektur jeg har valgt, samt vurdering av disse.
+
+\part{The project} % 40 sider
+% 15 sider overordnet diskusjon + 25 sider finkornet diskusjon
+% Hovedlinjer og viktige detaljer i programmer.
+% Se på alternativer og utvidelser     
+\include{projectoverview}
+\include{shredhub} % 3
+\include{architecture1} % 10 Fokuser mer p\aa konkrete problemer og alternativer for disse. Argumenter for hva jeg har valgt
+\include{architecture2} % 10
+\include{performanceTest} % 7 
+
+\part{Discussion and Conclusion} % 5-10 sider
+% Tilbakeblikk med kommentarer, gjerne kritiske
+% Hvor står vi nå i forhold til problemstillingen?
+% Retninger å gå i videre. Råd til neste masterstudent?	
+\include{discussion} % 10. 
+\input{conclusion}	
+%Hvilke resultater fikk jeg. 
+% Hva sier dem
+% Diskuter disse
+% Er det noe jeg burde ha gjort annerledes?
+%%What more is there to be done (security for instance), directions to go ++		
+		
+		
+%\backmatter{}
+\printbibliography{}
+\end{document}
+
+
+
+%% NOTES. 
+
+%% Dynamic HTML is an unofficial term some vendors use to describe effects achievable by combining html css and js based dom manipulation - Engineering book
+
+%% AJAX: Could be worth saying that JS is single threaded and that the UI thread would be frozen while waiting for responds if the AJAX call would be synchronous.
+
+%% For the results: The twitter blog posts in bookmarks has some nice cons about thick client shirt
+
+%% http://danwebb.net/2011/5/28/it-is-about-the-hashbangs <-- this page also has some nice cons against spa's.
+
+%% John Sheenan don't build the best rest api, build the best http api: What makes sense in the data layer doesn't necessarily make sense in the api layer.
+
+%% Discuss content negotiation for the API layer. This is done by using accept headers in HTTP.  This is discussed in the article above. its relevant because he discusses supporting getting videos from the api as .mp4 files!!! I could also have done it this way..
+
+%% As for the implementation of architecture 2.0: Since I use AMD, I don't have to use a namespace like app.sap. 
+
+
+%% Bibliography OLD
+
+		% \bibliography{mybib}                  %% ... or whatever
+%		\bibliographystyle{plain}             %% ... or norplain
+%	
+%		\begin{thebibliography}{9}
+%		
+%		\bibitem{Johnson04}
+%	 	 Rod Johnson with Juergen Hoeller,
+%	  	\emph{Expert one-to-one J2EE Development without EJB (Page 42)},
+%	  	Wiley Publishing, Inc., Indianapolis, Indiana 2004.
+%		
+%		\bibitem{importantFRConsiderations}
+%	 	 Siddharth,
+%	  	\emph{15 Most Important Considerations when Choosing a Web Development Framework (Section 12 and 13)},
+%	  	http://net.tutsplus.com/tutorials/other/15-most-important-considerations-when-choosing-a-web-development-framework/
+%		
+%		\bibitem{spring}
+%	 	 2012 SpringSource, a division of VMware,
+%	  	\emph{The Spring framework},	
+%		http://www.springsource.org/
+%		
+%		\bibitem{cloudfoundry}
+%	 	2012 VMware, Inc,
+%	  	\emph{Cloud Foundry},	
+%		http://www.cloudfoundry.com/
+%		
+%		\bibitem{ioc}
+%		Martin Fowler,
+%		\emph{Inversion of Control Containers and the Dependency Injection pattern},
+%		http://www.martinfowler.com/articles/injection.html
+%		\bibitem{webstorage}
+%		W3C,
+%		\emph{Web storage},
+%		http://www.w3.org/TR/2011/CR-webstorage-20111208/,
+%		December 08, 2011, W3C
+%		
+%		\bibitem{imap}
+%		Martin Fowler,
+%		\emph{The Identity Map pattern}
+%		http://martinfowler.com/eaaCatalog/identityMap.html
+%		
+%		\bibitem{dip}
+%		Robert C. Martin,
+%	  	\emph{Agile Sotfware Development. Principles, patterns and practices (Page 127)},
+%		2003, Pearson Education, Inc
+%		
+%		\bibitem{j2ee}
+%		Deepak Alur, John Crupi, Dan Malks,
+%	  	\emph{Core J2EE Patterns, Best practises and Design Strategies(Chapter 8)},
+%		2003, Prentice Hall / Sun Microsystems Pres
+%		
+%		\bibitem{henrik}
+%		Henrik Bærbak Christensen,
+%	  	\emph{Flexible, Reliable Software: using patterns and agile development},
+%		2010, Chapman and Hall/CRC
+%		
+%		\bibitem{jspatterns}
+%		Stoyan Stefanov,
+%	  	\emph{JavaScript Patterns},
+%		2010, O'Reilly Media
+%		
+%		\bibitem{Kayal}
+%		Dhrubojoyoti Kayal,
+%	  	\emph{Pro Java EE Spring Patterns (Chapter 4)},
+%		2008, Apress
+%		
+%		\bibitem{play}
+%		The Apache Software Foundation,
+%	  	\emph{The Play! framework},
+%		http://www.playframework.org/
+%		
+%		\bibitem{heroku}
+%		by Salesforce.com,
+%		\emph{Heroku},
+%		www.heroku.com
+%		
+%		\bibitem{armando2012}
+%		Armando Fow, David Patterson,
+%		\emph {Engineering Long-Lasting Sotfware: An Agile Approach Using SaaS and Cloud Computing},
+%		2012, Strawberry Canyon LLC
+%	
+%		
+%	\bibitem{sqlinjection}
+%		William G.J. Halfond, Jeremy Viegas, and Alessandro Orso,
+%		\emph{A Classification of SQL Injection Attacks and Countermeasures},
+%		Georgia Institute of Technology,
+%		2006
+%		
+%	\bibitem{poea}
+%		Martin Fowler,
+%		\emph{Patterns of Enterprise Application Architecture},
+%		Addison-Wesley Professional,
+%		2002
+%		
+%		\bibitem{rest},
+%		Roy Thomas Fielding,
+%		\emph{Architectural Styles and the Design of Network-based Software Architectures},
+%		UNIVERSITY OF CALIFORNIA, IRVINE,
+%		2000
+%		
+%	\bibitem{brown}
+%	Brown et al,
+%	\emph{Enterprise Java Programming with IBM Websphere},
+%	Addison-Wesley, 2001
+%	
+%			
+%	\bibitem{htmlinjection}
+%		CERT Coordination Center, DoD-CERT, the DoD Joint Task Force for Computer Network Defense (JTF-CND), the Federal Computer Incident Response Capability (FedCIRC), and the National Infrastructure Protection Center (NIPC),
+%			\emph{Malicious HTML Tags Embedded in Client Web Requests},
+%		http://www.cert.org/advisories/CA-2000-02.html
+%	
+%	
+%	\bibitem{validation}
+%		SpringSource, a division of VMware,
+%		\emph{Spring documentation, Chapter 6, Validation, Data Binding, and Type Conversion},
+%		http://static.springsource.org/spring/docs/current/spring-framework-reference/html/validation.html
+%		
+%		 \bibitem{beck}
+%		Kent Beck,
+%		 \emph{Test-Driven Development},
+%		 Addison Wesley,
+%		 2003
+%		 
+%	\bibitem{pragmatic},
+%		Andrew Hunt, David Thomas,	
+%		\emph{The Pragmatic Programmer: From Journeyman to Master},
+%		Addison Wesley,
+%		1999
+%	
+%	
+%	\bibitem{springsec},
+%		SpringSource, a division of VMware,
+%		\emph{Spring security framework},
+%		http://static.springsource.org/spring-security/site/
+%	
+%	\bibitem{dataCloud}
+%	Daniel J. Abadi,
+%	\emph{Data Management in the Cloud: Limitations and Opportunities},
+%	Yale University
+%	
+%	\bibitem{webstart}
+%	Peter Bell,
+%	\emph{A survey of client MVC frameworks},
+%	http://www.ibm.com/developerworks/web/library/wa-clientmvc/index.html
+%	
+%	\bibitem{topframeworks}
+%	BuiltWith trends,
+%	\emph{Framework usage statistics},
+%	http://trends.builtwith.com/framework
+%	
+%	\bibitem{mvc}
+%	Trygve Reenskaug, James O. Coplien,
+%	\emph{The DCI Architecture: A New Vision of Object-Oriented Programming}
+%	
+%	\bibitem{railsTrends}
+%	BuiltWithTrends,
+%	\emph{Ruby on rails usage statistics},
+%	http://trends.builtwith.com/framework/Ruby-on-Rails
+%	
+%	\bibitem{expertsOneToOne}
+%	Rod Johnson,
+%	\emph{Expert One on One J2ee Design and Development},
+%	Wrox, 2003
+%	
+%	\bibitem{frontController}
+%	Martin Fowler,
+%	\emph{Front Controller},
+%	http://martinfowler.com/eaaCatalog/frontController.html
+%	
+%	\bibitem{serviceLayer}
+%	Martin Fowler,
+%	\emph{Service layer pattern},
+%	http://martinfowler.com/eaaCatalog/serviceLayer.html
+%		
+%	\bibitem{facade}
+%	Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides,
+%	\emph{Design Patterns: Elements of Reusable Object-Oriented Software},
+%	Addison-Wesley,
+%	1994
+%
+%        \bibitem{bigtable}
+%         FAY CHANG, JEFFREY DEAN, SANJAY GHEMAWAT, WILSON
+%         C. HSIEH,DEBORAH A. WALLACH, MIKE BURROWS, TUSHAR
+%         CHANDRA,ANDREW FIKES, and ROBERT E. GRUBER,
+%         \emph{Bigtable: A Distributed Storage System for Structured
+%           Data},
+%         Google Inc, 2008
+%         
+%         %pages 205–218 for Carlo Strozzi
+%          
+%
+%
+%        \bibitem{web20}
+%	Tim O'Reilly,
+%	\emph{What is Web 2.0: Design Patterns and Business Models for the Next Generation of Software},
+%        O'Reilly Media,
+%	Communications \& Strategies, 
+%        No. 1, p. 17, First Quarter 2007 
+%
+%	\bibitem{ajax}
+%	Jesse James Garrett,
+%	\emph{Ajax: A New Approach to Web Applications},
+%	February 18, 2005
+%
+%	\bibitem{separateBusiness}
+%	Paragon Corporation,
+%	\emph{Separation of Business Logic from Presentation Logic in Web Applications (ASP.NET and PHP)}
+%	http://www.paragoncorporation.com/ArticleDetail.aspx?ArticleID=21,
+%	July 19, 2003
+%
+%	\bibitem{xml}
+%	W3C,
+%	\emph{Extensible Markup Language},
+%	http://www.w3.org/XML/,
+%	January 04, 2012
+%
+%	\bibitem{hibernate}
+%	Red Hat Inc,
+%	\emph{Hibernate},
+%	www.hibernate.org,
+%	2001
+%
+%	\bibitem{mybatis}
+%	Apache Licence 2.0,
+%	\emph{MyBatis},
+%	http://blog.mybatis.org/,
+%	2001
+%
+%	\bibitem{haml}
+%	The Haml Team,
+%	\emph{Haml templating language},
+%	http://haml.info/,
+%	2006
+%	
+%
+%	\bibitem{linq}
+%	Microsoft,
+%	\emph{LINQ},
+%	http://msdn.microsoft.com/en-us/library/vstudio/bb397926.aspx,
+%	November 19, 2007
+%	
+%	\bibitem{erb}
+%	The Ruby Licence,
+%	\emph{ERB templating API for ruby},
+%	http://ruby-doc.org/stdlib-1.9.3/libdoc/erb/rdoc/ERB.html,
+%	2004
+%	
+%	\bibitem{mongo}
+%	Creative commons,
+%	\emph{MongoDB},
+%	http://www.mongodb.org/,
+%	2012
+%	
+%	\bibitem{postgresql}
+%	The PostgreSQL Global Development Group,
+%	\emph{PostgreSQL},
+%	http://www.postgresql.org/,
+%	1996-2013
+%	
+%	\bibitem{chrome}
+%	Google,
+%	\emph{Google chrome developer tools},	 
+%	
+%	\bibitem{googlemaps}
+%	Google Maps API,
+%	\emph{https://developers.google.com/maps/}
+%	
+%	\bibitem{sqlpopular}
+%	Eric Redmond, Jim R. Wilson,
+%	\emph{Seven Databases In Seven Weeks:A Guide to Modern Databases and the NoSQL Movement},
+%	Pragmatic Bookshelf,
+%	May 18, 2012, USA
+%	
+%
+%
+%\bibitem{hales64}
+%Wesley Hales,
+%\emph{HTML5 and JavaScript Web Apps (Page 64)},
+%O’Reilly Media, Inc, 2013
+%
+%\bibitem{spa2}
+%Michael S. Mikowski, Josh C. Powell,
+%\emph{Single Page Web Applications (Page 2-3)},
+%Manning Publications Co, 2013
+%
+%\bibitem{firstweb}
+%\emph{The website of the world's first-ever web server},
+%http://info.cern.ch/,
+%CERN 2008
+%
+%\bibitem{historyWeb}
+%W3C,
+%\emph{A Little History of the World Wide Web},
+%http://www.w3.org/History.html
+%
+%\bibitem{mosaic}
+%\emph{NCSA Mosaic -- September 10, 1993 Demo},
+%http://www.totic.org/nscp/demodoc/demo.html
+%
+%\bibitem{css}
+%\emph{CSS},
+%http://www.w3.org/Style/CSS/
+%
+%\bibitem{jsHistory}
+%\emph{A Brief History Of JavaScript},
+%http://javascript.about.com/od/reference/a/history.htm
+%
+%\bibitem{tanumbaum}
+%Andre S.Tanumbaum, David J. Wetherall,
+%\emph{Computer Networks (page 691)},
+%Pearson Education Inc. 2011
+%
+%\bibitem{tanumbaumSec}
+%Andre S.Tanumbaum, David J. Wetherall,
+%\emph{Computer Networks (page 875-877)},
+%Pearson Education Inc. 2011
+%
+%\bibitem{flash}
+%\emph{Adobe Flash runtimes},
+%http://www.adobe.com/products/flashruntimes.html
+%
+%\bibitem{mozilla}
+%\emph{Mozilla},
+%http://www.mozilla.org/en-US/
+%
+%\bibitem{google}
+%\emph{Google},
+%https://www.google.com/intl/us/about/
+%
+%\bibitem{jsPopularity}
+%\emph{JavaScript Leads The Pack As Most Popular Programming Language}
+%http://www.webpronews.com/javascript-leads-the-pack-as-most-popular-programming-language-2012-09
+%
+%\bibitem{jsin10days}
+%Charles Severance,
+%\emph{JavaScript: Designing a Language in 10 Days},
+%Computer (IEEE Computer Society) 45 (2): 7–8.
+%
+%\bibitem{jsHowGotHere}
+%\emph{JavaScript: How Did We Get Here},
+%http://www.oreillynet.com/pub/a/javascript/2001/04/06/js\_history.html
+%
+%\bibitem{jsHist}
+%\emph{A brief History of JavaScript},
+%http://javascript.about.com/od/reference/a/history.htm
+%
+%\bibitem{UnderstoodJs}
+%Douglas Crockford,
+%\emph{The World's Most Misunderstood Programming Language},
+%http://www.crockford.com/javascript/javascript.html
+%
+%\bibitem{rest}
+%Roy T. Fielding,
+%\emph{Architectural Styles and the Design of Network-based Software Architectures},
+%University Of California, Irvine, 2000
+%
+%\bibitem{engineering}
+%David Patterson, Armando Fox,
+%\emph{Engineering Long-Lasting Software: An Agile Approach Using SaaS and Cloud Computing},
+%Strawberry Canyon LLC, August 24, 2012
+%
+%\bibitem{lessCode}
+%Douglas Barry, Torsten Stanienda,
+%\emph{Transparent persistence vs. JDBC call-level interfaces},
+%http://www.service-architecture.com/object-relational-mapping/articles/transparent\_persistence\_vs\_jdbc\_call-level\_interface.html,
+%1998
+%
+%\bibitem{ormlame}
+%Craig Walls,
+%\emph{Spring in Action},
+%Manning Publications Co, 2011
+%
+%\bibitem{railsPop}
+%http://rubyonrails.org/applications
+
+%	\end{thebibliography}	
+
