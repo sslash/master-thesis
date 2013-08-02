@@ -1,0 +1,126 @@
+\chapter{Shredhub, a Web 2.0 Application}
+This part of the thesis covers the prototype that has been designed and built in order to compare the two architectural approaches. The Web app has been built twice from the ground-up, using two completely different architectures. The Web app contains common features found in traditional Web 2.0 applications. This includes:
+\begin{itemize}
+\item{} Social networking interactions:
+	\begin{itemize}
+		\item{} Users have their own profile account that is visible to other users
+		\item{} Users connect to each other
+		\item{} Users can creat blogs posts, and rate and comment on other posts
+		\end{itemize}
+\item{} Interactive behavior with rich user interfaces
+\item{} Large amounts of persisted, user-generated data
+\end{itemize}
+
+The rest of this part is separated into three chapters: In this chapter we look at the Web app itself, seen from the end-user's perspective. In the last two chapters, we will have a detailed look at the two ways the app was built. For the record, during the discussion we will use the term \textit{User} to refer to a currently logged in user.
+	
+\section {The Concept}
+Shredhub, is a social Web application for musicians, aimed primarily for guitarists. The application enables users to share their skills and musical passion in a social and competing manner. Through a modern and interactive user interface, the users are able to post videos of themselves playing a short tune. Everyone can watch, comment and give a numbered rating to the videos, so that the creator can achieve experience points and become highly ranked on this social platform. 
+		
+Now, it is important to acknowledge the fact that this application is primarily for guitarists, which does imply a slightly small user group. A better solution would be to implement a system that supports more kinds of musicians, for instance drummers, piano players, saxophone players etc. Therefore, a better solution could be to let the users pick their preferred instrument before they access the application's main page. From there on they would only be able to participate with the kind of musicians the user picked at startup. However, because I have only had a certain amount of time to implement this application, extending the application unfortunately goes out of project scope. Therefore I content myself with only supporting guitar players in this project. 
+		
+\section {User Functionality}
+There are many terms and concepts used on Shredhub. Here is a general overview:
+\begin{itemize}
+\item{} A \textbf{Shredder} is a user on shredhub. The shredder has a profile that includes (among other things): profile-image, list of guitars, list of equipment, home-country, experience points etc
+\item{} \textbf{Experience points} is a rating of how skilled a Shredder is. This rating changes when someone rates a Shred the Shredder has uploaded
+\item{} A \textbf{Shred} is a video of a Shredder playing a short tune. The Shred has a set of tags \footnote{Tags is a widely adopted term in the world of Web 2.0\cite{web20book}; many web 2.0 applications use tags to classify things like blogs and images} that categorizes the video. Other Shredders can rate and comment the Shred. Also, Shredders can remove a comment they made.
+\item{} \textbf{Shredders} connect to each other in fan-relationships, meaning a Shredder A can be a fan of Shredder B, such that Shredder B is a fanee of Shredder A. 
+\item{} Two Shredders can \textbf{Battle} each other in a Shred-battle. This is a turn-based game where Shredders upload Battle-Shred videos in a specific battle-category. Others can rate the Battle-Shred videos, such that the purpose is to have a highest summed up rating. 
+\end{itemize}
+		
+\section{Pages and User Stories}
+Given below is the set of pages and user stories in Shredhub. Each page is outlined together with its URL, and a user story that is found on the page. Notice that the URLs are not real in this discussion, they are just fictive examples.
+\begin{description}
+		
+\item[The front page, www.shredhub.com] \hfill \\
+The User is first met with a front page as seen in figure \vref{fig:frontpage}. Here the User can either register as a new Shredder, or log in with a username and password. The User will not be able to access any of the other services in the app before he is logged in. The page also displays a set of the current most popular Shred videos.
+\begin{figure}
+ \begin{center}
+\fbox{\includegraphics[width=\textwidth] {images/frontpage.png}}
+% Kommandoen \fbox tegner en ramme.
+\end{center}
+\caption{The front page at Shredhub}\label{fig:frontpage}
+\end{figure}
+
+\item [The shred pool, www.shredhub.com/theshredpool] \hfill \\
+This is the first page the Shredder meets when he logs in. It is the ``main-page'' on Shredhub, which contains multiple rows of Shreds made by other Shredders. The page contains the following rows of Shreds:
+\begin{enumerate}
+\item{} The latest Shreds
+\item{} Shred-news:
+	\begin{enumerate}
+		\item{} Newest Shreds made by fanees
+		\item{} Newest Battle-Shreds by fanees
+		\item{} Newly created Battles by fanees
+		\item{} New recommended Shredders to connect to
+	\end{enumerate}
+\item{} Shreds with particular high rating
+\item{} Shreds from Shredders that might be of interest
+\item{} Shreds based on tags the User enters
+\end{enumerate}
+
+Every row contains a collection of 3-5 Shreds, except the final row which contains 20 Shreds. The User can click the next button in a row, which results in a new row of Shreds. The Shred-news section is a set of Shreds and Shredders especially picked out to fit the User's profile, that is, new content made by his fanees, and recommendations for new Shredders. The Shredpool is showed in figures \vref{fig:theshredpool1} and \vref{fig:theshredpool2}
+
+The shredder can also create and upload a new Shred by clicking "Upload shred". If the Shredder clicks on a particular Shred in any of the rows, a new window pops up displaying the Shred video.
+		
+\begin{figure}
+  \begin{center}
+\fbox{\includegraphics[width=\textwidth] {images/shredpool1.png}}
+% Kommandoen \fbox tegner en ramme.
+\end{center}
+\caption{The Shredpool (top)}\label{fig:theshredpool1}
+\end{figure}
+
+\begin{figure}
+  \begin{center}
+\fbox{\includegraphics[width=\textwidth] {images/shredpool2.png}}
+% Kommandoen \fbox tegner en ramme.
+\end{center}
+\caption{The Shredpool (bottom)}\label{fig:theshredpool2}
+\end{figure}
+
+\item [Shredders, www.shredhub.com/shredders] \hfill \\
+This is an overview of all the the Shredders that are using the app. Considering that the amount of Shredders on the page might be very big, the list is paginated, meaning a fixed number (20 in this case) is displayed at a time, and the Shredder can click next to iterate to the next page of Shredders. Shredders can also search for other Shredders by name. The purpose of this page is to encourage Shredders to meet new Shredders so that their fan graphs can be extended. The User can click on a Shredder to access his public profile page. The shredders page can seen in figure \vref {fig:shredders}. \begin{figure}
+ \begin{center}
+\fbox{\includegraphics[width=\textwidth] {images/shredders.png}}
+% Kommandoen \fbox tegner en ramme.
+\end{center}
+\caption{The list of Shredders}\label{fig:shredders}
+\end{figure}
+		
+\item [Shredder, www.shredhub.com/shredder/<id>] \hfill \\
+This is a page that displays the details for a given Shredder, that has the unique id found in the URL. A list of Shreds that the current shredder has published is displayed in a list view, together with a list of his fanees. The User may choose to challenge this Shredder for a battle, or become a fan of the Shredder. The page is customized to show the relationship the User has with this Shredder. This might be that they already are in a battle, or if a battle request is sent to this Shredder, if they are fans of each other already, and other similar relationships. The page can be seen in figure \vref{fig:shredder}.
+
+\begin{figure}
+  \begin{center}
+\fbox{\includegraphics[width=\textwidth] {images/shredder.png}}
+% Kommandoen \fbox tegner en ramme.
+\end{center}
+\caption{A Shredder's profile page}\label{fig:shredder}
+\end{figure}
+		
+\item [Battle, www.shredhub.com/battle/<id>] \hfill \\
+This page displays a battle between two Shredders. If the currently logged in user is one of the battlers, the User is able to upload a Shred for the battle. In a battle I distinguish between the battler who initiates the battle, and the battlee, being the one who is challenged. I have not added an image of a battle, because it won't be discussed in much detail in this thesis.
+
+\item[Shred] \hfill \\
+A pop-up window displays a particular Shred made by a Shredder. Users can add a rating to the Shred, and add comments for it. The Shred can be accessed from multiple different pages in the app. An example image is given in figure \vref{fig:shred}.
+\begin{figure}
+  \begin{center}
+\fbox{\includegraphics[width=\textwidth] {images/shred.png}}
+% Kommandoen \fbox tegner en ramme.
+\end{center}
+\caption{A pop-up window displaying a Shred}\label{fig:shred}
+\end{figure}
+
+\item[Upload a Shred] \hfill \\
+For uploading Shreds, a simple pop-up window is displayed so the User can add a Video, a description, and a set of tags. This window can only be accessed inside the Shredpool. This can be seen in figure \vref{fig:addshred}
+
+\begin{figure}
+  \begin{center}
+\fbox{\includegraphics[width=14cm] {images/addshred.png}}
+% Kommandoen \fbox tegner en ramme.
+\end{center}
+\caption{A pop-up that lets the User add a new Shred}\label{fig:addshred}
+\end{figure}
+
+\end{description}
+		

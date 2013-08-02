@@ -1,0 +1,131 @@
+\documentclass[UKenglish]{ifimaster}  %% ... or USenglish or norsk or nynorsk
+\usepackage[T1]{fontenc,url}
+%\addtolength{\textwidth}{1cm} %% 2 cm is awesome
+%\addtolength{\topmargin}{0cm}
+\usepackage{listings}
+\usepackage{babel,textcomp,ifimasterforside,varioref,graphicx,mathpple,csquotes}
+\usepackage{tabularx}
+%\usepackagee[T1]{url}
+\usepackage{wrapfig}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage[backend=biber,style=numeric,sort=nyt]{biblatex} %% VIKTIG FOR \AA F\AA TIL BIBER
+\addbibresource{library.bib}
+\usepackage{color}
+\usepackage[latin1]{inputenc}   %% eller applemac (om du har en Mac) 
+                                %% eller utf8 (om du bruker det).\usepackage{sidecap}
+\urlstyle{sf}
+\lstset{ %
+language=Java,                % choose the language of the code
+basicstyle=\footnotesize,       % the size of the fonts that are used for the code
+%numbers=left,                   % where to put the line-numbers
+%numberstyle=\footnotesize,      % the size of the fonts that are used for the line-numbers
+%stepnumber=1,                   % the step between two line-numbers. If it is 1 each line will be numbered
+%numbersep=5pt,                  % how far the line-numbers are from the code
+backgroundcolor=\color{white},  % choose the background color. You must add \usepackage{color}
+showspaces=false,               % show spaces adding particular underscores
+showstringspaces=false,         % underline spaces within strings
+showtabs=false,                 % show tabs within strings adding particular underscores
+frame=single,           % adds a frame around the code
+tabsize=2,          % sets default tabsize to 2 spaces
+captionpos=b,           % sets the caption-position to bottom
+breaklines=true,        % sets automatic line breaking
+breakatwhitespace=false,    % sets if automatic breaks should only happen at whitespace
+escapeinside={\%*}{*)}          % if you want to add a comment within your code
+}
+
+% TODO:
+% Change first ex in appendix A to be how JSP + controllers implement view logic.
+% Fix Tags is a widely adopted term in the world of Web 2.0\cite{web20book} . with page number
+% Endre cache snakk til det jeg har notert
+% Snakk om hva andre har gjort
+% Skriv abstract
+% Fix referanser
+% F\aa frem skalerbarhet mer
+% Fjerne ting i implementasjonskapitlene
+% Fikse graf
+
+
+%% NOTE TO SELF:
+% Les gjennom alle disse kommentarene når jeg leser gjennom oppgaven. Se til at alt er oppnådd!
+
+
+%% Notater om det å skrive master:
+
+% - B\or ha åpne ender som kan taes opp i diskusjon
+% - Det som arbeides med bør være formulert som et spørsmål
+% - Tenk: Hvordan skal neste versjon av programmet være?
+% - God oppgave: 
+%     - Gode drøftelser av alternativer ved avgjørende punkter i arbeidet
+%     - Skisser to til fire ulike alternativer. Drøft for eller mot. Konkluder med hvorfor du valgte som du gjorde.
+% - Et godt kapittel, ca en side om tilbakeblikk: innrøm evt feil eller dårlige valg jeg har gjort. 
+% Skisser flere mulige måter å jobbe videre med området
+% 
+
+\title{Scalable and Efficient Web Application Architectures}        %% ... or whatever
+\subtitle{Thin-clients and SQL vs. Thick-clients and NoSQL}         %% ... if any
+\author{Michael K. Gunnulfsen}                      %% ... or whoever 
+\date{Spring 2013}                    %% ... or whenever
+% \bibliography{mybib}                  %% ... or whatever
+\begin{document}
+\ififorside{}
+
+\frontmatter{}
+\maketitle{}
+
+%\chapter*{Abstract}	% 1/3 side	
+\include{abstract}
+\tableofcontents{}
+%\listoffigures{}
+%\listoftables{}		
+\include{preface}
+
+\mainmatter{}
+
+
+%% store domain data like they appear in the user interface! 
+
+\part{Introduction}    
+\input {introduction} % 5 sider
+%% Problemstillingen, samt hvordan den ble som den ble
+% Kort gjennomgang av resten avkapitlene
+                
+\include{background} % 20 sider
+% Innføring i støtte-områder etc for oppgaven (rettet mot oppgavens problemstilling)
+						
+\include{design} % 15 sider
+% Hovedvalg og vurdering av disse.
+% Etter veiledning med Arne, skal dette kapittelet drøfte dagens løsninger av begge arkitekturer.
+% Så skal det naturlig komme inn i hvilken arkitektur jeg har valgt, samt vurdering av disse.
+
+\part{The Project} % 40 sider
+% 15 sider overordnet diskusjon + 25 sider finkornet diskusjon
+% Hovedlinjer og viktige detaljer i programmer.
+% Se på alternativer og utvidelser     
+\include{shredhub} % 3
+\include{architecture1} % 10 Fokuser mer p\aa konkrete problemer og alternativer for disse. Argumenter for hva jeg har valgt
+\include{architecture2} % 10
+\include{performanceTest} % 7 
+
+\part{Discussion and Conclusion} % 5-10 sider
+% Tilbakeblikk med kommentarer, gjerne kritiske
+% Hvor står vi nå i forhold til problemstillingen?
+% Retninger å gå i videre. Råd til neste masterstudent?	
+\include{discussion} % 10. 
+\input{conclusion}	
+%Hvilke resultater fikk jeg. 
+% Hva sier dem
+% Diskuter disse
+% Er det noe jeg burde ha gjort annerledes?
+%%What more is there to be done (security for instance), directions to go ++		
+\part{Appendix}
+\include{appendixa}
+\include{appendixb}
+		
+		
+\backmatter{}
+\printbibliography{}
+\end{document}
+
+
+

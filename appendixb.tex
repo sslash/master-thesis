@@ -1,0 +1,390 @@
+\chapter{Appendix B}
+\section{Architecture 2.0 - Domain Logic Example}
+\label{sec:bmodel}
+The following example shows the business logic implemented for the rate-shred user action. The example shows the implementation in the Shred and Shredder Model objects, and the associated API function. Note that the API functions also contain some business logic in order to verify correct input data. There are two API calls performed in this example.  The first updates the rating on a Shred. The other updates the shredder level on the Shredder who owns the Shred. The model functions are called by a View implementation (showed in the next section).
+\begin{lstlisting}
+
+// In the Shred Model module
+addRating : function(rateValue) { 
+	if( rateValue <0 || rateValue > 10){
+		return false;
+	}
+	var shredRating = this.get('shredRating');
+      	shredRating.numberOfRaters ++;
+      	shredRating.currentRating += parseInt(rateValue, 10);     
+	
+	// Call the Shredder module. 
+      	this.increaseShredderLevel(parseInt(rateValue,10));
+
+	// Send the updated JSON object to the API
+	// calls updateShred in the API
+      	this.save();
+	
+	// Notify the View of the change so it can update the UI
+      this.trigger('change');
+      return true;
+    },
+    
+    increaseShredderLevel : function(level) {
+      var shredder = new Shredder.Model(this.get('owner'));
+      return shredder.increaseShredderLevel(level);
+    },
+  });
+  
+  // In the Shredder Model module  
+    increaseShredderLevel : function(level) {
+      var that = this;
+      // No need to evaluate the rate value. It's already been verified!
+
+	// Calls updateShredder in the API
+      $.ajax(this.urlRoot + "/" + this.get('_id'),
+      { 
+        // add Basic http authentication header info
+        beforeSend : function(xhr) {
+              xhr.setRequestHeader("Authorization", ("Basic 		".concat(Session.getToken())));
+        },
+        data : { shredderLevel : level },
+        type : "PUT"
+      })
+      
+      // Upon success, update the Shredder object, and notify the UI
+      // of the change
+      .done(function(res){
+        that.set(res);
+        that.trigger('shredderUpdated');
+      });
+      return true;
+    },
+  
+  
+// In the API, Shred repository
+// @req is the http request object
+// @res is the http response object 
+exports.updateShred = function(req,res) {
+  // check if the owner is not the same as the current User
+  if ( req.user.uid == req.body.owner._id){
+    res.statusCode = 401;
+    return res.send(null);
+  }
+
+  // get the shred object from MongoDB so we can add some business rules
+  // check that the new rating is less then 10, more then 0
+  shred.getShred(req.body._id)
+  .done(function(leShred){
+
+    var newRateVal = req.body.shredRating.currentRating - 						leShred.shredRating.currentRating;
+    if ( newRateVal < 0 || newRateVal > 10){
+      res.statusCode = 400;
+      return res.send(null);
+    }
+
+	// Everything ok. Update the JSON object in MongoDb shred wrapper
+    shred.updateShredByObject(req.body)
+     .done(function(doc){
+        res.send(doc);
+      })
+      .fail(function(err){
+        res.send(null);
+     })
+  });
+}
+  
+  // In the API, Shredder repository
+  exports.updateShredder = function(req,res) {
+
+   // Current user is not allowed to update his own shredder level
+   if ( req.user.uid == req.params.uid){
+    res.statusCode = 401;
+    return res.send(null);
+  }
+  
+  // Check shredder level is within bounds
+  var newLevel = req.body.shredderLevel;
+   if ( newLevel > 10 || newLevel < 0) {
+     res.statusCode = 400;
+     return res.send(null);
+  }
+
+  // call the update function on MongoDB shredder wrapper
+  shredder.updateShredder(req.params.uid, req.body)
+  .done(function(doc){
+    res.send(doc);
+  })
+  .fail(function() {
+    res.send(null);
+  })
+}
+\end{lstlisting}
+
+\section{Architecture 2.0 - View Logic Example}
+\label{sec:bview}
+In this example, we see how the view logic is implemented in Architecture 2.0. Each view object implements all the view logic necessary for that particular view. They cooperate closely with the model to delegate business operations. Each View has a reference to the HTML template they ``own''. This example shows the view logic for displaying a Shred-video. 
+
+\begin{lstlisting}
+Shred.Views.ModalView = BaseView.extend({
+  template: "shred/shredModal",
+
+    /** INITIALIZATION CODE */
+
+    // After the rendering process is done, 
+    //add the necessary event handlers
+    postRender : function() {
+       $('#rateButton').on("click", $.proxy(this.rateShred, this));
+       $('#commentButton').on("click", $.proxy(this.saveComment, this));
+       $('td .close').on("click", $.proxy(this.deleteComment, this));
+      this.listenTo(this.model, 'change', this.notifyOnChange);
+    },
+
+    // Return a JSON object that will be rendered into the HTML
+    serialize : function() {
+      return {"shred" : this.model.toJSON()};
+    },
+
+
+    /* EVENT HANDLERS */
+
+
+    // Rate button clicked
+    rateShred : function(event) {
+      event.preventDefault();
+      var rateVal = $('input[type=range]').val();
+
+      // Call the business operation in the model
+      this.model.addRating(rateVal);
+    },    
+
+    // Delete comment clicked. Call the business function in the model 
+    deleteComment : function(event) {
+      var commentIndex = event.currentTarget.id.split("-")[1];
+      this.model.deleteComment(commentIndex);
+    },
+    
+    // A new comment is created. Call the model function for business op!
+    saveComment : function(event) {
+      event.preventDefault();
+      this.model.addComment($('#commentText').val(), Session.getUser());
+    },
+
+
+    /** CLEAN UP FUNCTIONS */
+
+
+    // Called when the shred object has been updated. Must re-render the view
+    notifyOnChange : function() {
+      app.Mediator.publish("createShredModalView", this.model);
+    },
+
+    // Called when a this view is to be re-used to display a new Shred
+    resetShredModel : function(newModel) {
+      this.stopListening(this.model, 'change', this.notifyOnChange);
+      this.model = newModel;
+    },
+
+    // Kill this view by deleting its DOM elements and remove event handlers 
+    cleanUp : function() {
+      console.log("Killing shredmodal " + this.cid);
+      this.remove();
+      this.unbind();
+   }
+ });
+\end{lstlisting}
+
+
+\section{Architecture 2.0 - Add Dig User-feature}
+In this section, we look at how the Add dig user-feature was implemented. The example starts with the view implementation that concerns dragging a guitar image to the left or right in order to scroll through the list, and clicking on the add dig button on one of the guitars. The example continues with the business operation in the Shredder Model, and finally the API implementation. Once again, note that some business logic is duplicated on the back-end in order to prevent malformed input. 
+
+\begin{lstlisting}
+
+// In the Shredder template
+<div class="container fullWidth">
+	<h2>Guitar Showroom</h2>
+
+	<div class="row-fluid">
+		<ul class="thumbnails">
+
+			<li class="span1"></li>
+			<li class="span1 arrow-img">
+				<a href="" data-bypass="true" class="guitarLeftClick">
+					<i class="icon-backward" ></i>
+				</a>
+			</li>
+
+			<li class="span8">
+				<div class="listContainer">
+					<div id="list">
+						<% _.each(shredder.guitars, function(guitar) { %>
+
+						<% if ( ( typeof guitar ) == 'object' ) { %>
+						<div class="thumbnail">
+							<img src="/pics/<%= guitar.imgPath %>" class="dragImage">
+							<p><small>Drag image to see next</small></p>
+							<h3><%= guitar.type %></h3>
+							<p>Diggs: <%= guitar.digs %>  </p>
+							<p><button class="btn btn-success digBtn">Dig</button></p>
+						</div>
+						<% } }) %>
+					</div>
+				</div>
+			</li>
+
+			<li class="span1"></li>
+			<li class="span1 arrow-img">
+				<a href="" data-bypass="true" class="guitarRightClick">
+					<i class="icon-forward"></i>
+				</a>
+			</li>
+		</li>
+	</ul>
+</div>
+
+
+// In the Shredder View  
+
+  // Reference to the Html template
+  template : "shredder/Shredder",
+  
+  // Re-set some state data
+  initialize : function() {
+    this.slideWidth = 610;
+    this.slideNumber = 0;
+    
+    // Update the UI when the shredder is updated
+    this.listenTo(this.model, 'shredderUpdated', this.renderTemplate);
+  },
+
+  events : {
+    "mousedown .dragImage" : "mouseDownEvent" ,
+    "mousemove .dragImage" : "mouseMoveEvent",
+    "mouseup .dragImage" : "mouseUpEvent",
+    "click .guitarRightClick" : "rightClick",
+    "click .guitarLeftClick" : "leftClick",
+    "click .digBtn" : "digButton"
+  },
+
+  // Dig button is clicked. Add a digg in the Model object
+  digButton : function() {
+    this.model.addDig(this.slideNumber);
+  },
+
+
+  rightClick: function(event){
+    event.preventDefault();
+    this.slideLeftOrRight(1);
+  },
+
+  leftClick: function(event){
+    event.preventDefault();
+    this.slideLeftOrRight(-1);
+  },
+
+  slideLeftOrRight : function(step) {
+    this.slideNumber += step; // 1 / 2 / 3 / 4 / ... n
+    var containingUL = document.getElementById("list");
+    this.slideTo(containingUL, -this.slideNumber * this.slideWidth);
+  },
+
+
+  slideTo : function(el, left) {
+    var steps = 10;
+    var timer = 25;
+    var elLeft = parseInt(el.style.left, 10) || 0;
+    var diff = left - elLeft;
+    var stepSize = diff / steps;
+
+    function step() {
+      elLeft += stepSize;
+      el.style.left = elLeft + "px";
+      if (--steps) {
+        setTimeout(step, timer);
+      }
+    }
+    step();
+  },
+
+  mouseUpEvent : function(event) {
+    this.mouseIsDown = false;
+    if ( this.movedRight === true) {
+      this.movedRight = false; 
+      this.slideLeftOrRight(1);
+    }else if ( this.movedLeft === true )  {
+      this.movedLeft = false;
+      this.slideLeftOrRight(-1);
+    }
+  },
+
+  mouseDownEvent : function(event) {
+    event.preventDefault();
+    this.mouseIsDown = true;
+    this.xCord = event.pageX;
+  },
+
+  mouseMoveEvent : function(event) {
+    event.preventDefault();
+    var currXcord = event.pageX;
+    if ( this.mouseIsDown) {
+      if ( (this.xCord - currXcord) > 40 ) {       
+        this.movedRight=true;
+      }else if ( (this.xCord - currXcord) < 40  ){
+        this.movedLeft=true;      
+      }
+    }
+  },
+  
+  
+  // In the Shredder Model
+addDig : function(i) {
+      var that = this;
+      
+      // The user cannot add dig to his own guitar
+      if (this.get('_id') != Session.getUser()._id) {
+      
+      	// Call the API
+        $.ajax(this.urlRoot + '/' + this.get('_id') + '/guitar/' + i + '/dig',
+          {
+          
+          	// Add authentication header
+            beforeSend : function(xhr) {
+              xhr.setRequestHeader("Authorization", 
+              ("Basic''.concat(Session.getToken())));
+            },
+            type : 'PUT'
+          })
+        .done(function(res) {
+        
+          // Increase the shredder level for this shredder
+          // See the previous section for the implementation of this
+          that.increaseShredderLevel(1);
+        });
+      } else {
+        return {errorMsg : "Cannot add dig to your own guitar"};
+      }
+    },
+    
+
+// in the API
+exports.digGuitar = function(req,res) {
+
+	// check if the owner is not the same as the current User
+	if ( req.user.uid == req.body.owner._id){
+	    res.statusCode = 401;
+	    return res.send(null);
+	}
+
+   return shredder.addDigForGuitar({
+        uid: req.params.uid, 
+        gIndex : req.params.gIndex,
+        res : res
+      });
+}
+
+
+// In the MongoDB client 
+exports.addDigForGuitar = function(arg) {
+  var guitarArr ={}
+  guitarArr["guitars." + arg.gIndex + ".digs"] = 1;
+
+  exports.Shredder.update({"_id" : arg.uid.toString()}, {$inc : guitarArr},
+    function(err, numberAffected, raw) {return raw;});
+}
+    
+\end{lstlisting}

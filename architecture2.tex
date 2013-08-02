@@ -1,0 +1,359 @@
+\chapter{Architecture 2.0}
+%Lines: 
+%	4061 (modules)
+%+	1278 (app)
+%+	389 (HTML)
+%+	663 HTML
+%+	163
+%+ 	632
+%+	85
+%+	737
+%+	88 HTML
+%+ 278 config
+%+	1320 (models)o
+%+	811(models)
+%=	10505
+
+\section{Introduction}
+In this chapter we look at the details of Architecture 2.0, which is an implementation of Shredhub that conforms to \textit{Reference-model 2.0}. The application is a thick-client architecture completely implemented with JavaScript, using Node.js on the back-end, and a large-scale JavaScript application that runs in the browser. This way, the back-end is merely a simple interface for manipulating the database. The back-end is made with two popular NoSQL databases. Redis, for authenticating users, and MongoDB for persisting the application's domain. The front-end uses various third-party frameworks that expands the JavaScript programming language. These are Backbone.js for code-structure, AMD for dependency management, and JQuery for cross-browser DOM manipulation. For simplicity in this chapter, we will use the term \textit{App} to refer to the JavaScript application that runs in the client's browser, and we will use the term \textit{API} to refer to the code that runs on the back-end. 
+
+% In this section we will discuss the design and implementation of Architecture 2.0.
+% 
+% An imprint decision is when and where to put script loading tags. Loading scripts blocks the page from loading other recourses and rendering. THere are many options: (this is old though=)
+%HTTP://www.stevesouders.com/blog/2009/04/27/loading-scripts-without-blocking/. 
+%
+%Performance enhancement: minifying and compressing HTML,css and js. GZIP compresses shit by identifying similar strings. the more matching strings found, the smaller the file can be compressed to. 
+% 
+%	  
+%		  
+%Cold have chosen to fetch all the HTML at once. This can be done in two ways: Fetch each HTML template one at a time, or merge all together (can be done when deploying) and fetch the whole thing then. However, I chose to lazily fetch them and cache them in the browser (guess require does this?). 	
+%		  	  
+%Database:
+%My first attempt:
+% battle requests where battler is dbrefs
+% everything in mongo
+%		
+%Nice rest principle:
+%The "stateless" constraint in reSt means that all 
+%messages must include all application state.
+
+\section{Architectural Overview}
+The front-end is a large-scale JavaScript application. Now, as discussed previously, building large JavaScript applications is difficult, primarily because it lacks programming language idioms like classes, namespaces and dependency handling. To get a modular and flexible codebase for this application, a solution to the aforesaid issues is to use open-source frameworks that provide module features and dependency handling. In addition the application is built using the MV* pattern. The pattern fits the requirements for this interactive Web app mainly because it separates the domain logic from the view logic, such that these concerns can be implemented independently. Also, I am free to decide how to implement controller logic. I have chosen to divide this concern into two parts; a Router module which handle requests for the main pages on Shredhub (coarse-grained requests), and views, which handle finer-grained requests for minor user interactions. I could have designed the \textit{App} around a traditional MVC architecture, but this wouldn't give me an intuitive controller separation, because all controllers are treated equal in this pattern. The MVVM pattern would also have been a fine choice, because Shreds and Shredders are displayed in multiple ways, and thus each graphical representation would be implemented in a separate view-model object. However, this design is a bit more complex then MV*.
+
+The \textit{App} is composed of a set of loosely coupled modules, where each module contains a set of zero to many \textbf{models}, \textbf{collections} and \textbf{views}. These are core entities in the application that together provide domain data, business operations, controller handling and view logic. In addition, there is a \textbf{Session} module which offers a facade to manage session data, and a \textbf{Router} for navigating between pages. Lastly there is the  \textbf{Mediator} which is a module that coordinates communication between views and models. Each module is a separate JavaScript source file. The Asynchronous Module Definition pattern is used to define dependencies between each module. 
+
+The API is organized as a Rest API\cite{rest}, where the first-order citizens are the application's domain objects. In Architecture 2.0, these are Shreds, Shredders, Battles and BattleRequests. Thus, the API offers a set of self-contained operations that manipulates these resources. In respect to \textit{Reference-model 2.0}, the API is stateless. To achieve this, every Rest operation contains all necessary state information. 
+
+The reason Node.js was chosen on the back-end, is primarily because it uses JavaScript. This way, JavaScript is the one and only programming language used through the whole application. Now, because both databases in Architecture 2.0, the API, and also the \textit{App} communicates with the same data-format, JSON, no marshalling has to be done. This does simplify the programming model. Figure \vref{fig:arc2} shows an overview of the main components in Architecture 2.0. The figure doesn't include the Mediator, or Session, but they are separate modules in the browser.
+
+ \begin{figure}[h]
+  \centering
+  \includegraphics[scale=0.6]{images/arc2.eps}
+  \caption[sp.]
+   {The main software components of Architecture 2.0.}
+    \label{fig:arc2}
+\end{figure}
+
+
+
+In the rest of this chapter we go into the implementation details of Architecture 2.0 The following text is divided into a front-end, and a back-end section.
+
+\section{The Front-end}
+Also referred to as the \textit{App}, the front-end is composed of a large JavaScript codebase and a set of HTML template files that are used to dynamically generate HTML. 
+
+\subsection{The Bootstrapping Process}
+In Architecture 2.0, a fairly large JavaScript application has to be downloaded and initialized in the client's browser during the client's initial request to the Shredhub. I call this the bootstrapping process, because the client will ask for a small HTML page that contains one single line of JavaScript. This statement is responsible for starting a recursive process that loads in the rest of the \textit{App} from the server. In detail, the bootstrap process works like this:
+
+\begin{enumerate}
+\item{} The client visits www.shredhub.com and the server responds with a file called index.HTML
+\item{} index.HTML contains the line \\ \textit{<script data-main="/app/config" src="/vendor/js/libs/require.js"></script>}, which will fetch a JavaScript file called require.js from the server
+\item{} require.js is a framework that implements the AMD specification. It will access a module called /app/config (outlined in the script statement above), which contains a reference to the \textbf{main} function.
+\item{} The JavaScript file that has the main function is fetched from the server, and the main function is called.
+\item{} The main function is responsible for instantiating objects that will be globally accessible (that is, accessible through the whole codebase). This includes the Session, Mediator and the Router object. Also, a globally accessible object called \textit{app} is created. This object will cache HTML templates in the browser's JavaScript heap memory, so that HTML templates won't have to be fetched more then once. 
+\item{} When the Router object is initialized it will start listening to URL changes. 
+\item{} At the end of the bootstrapping process, the Router will handle a request for the home page. This will result in the Home page view being created and rendered in the browser.
+\end{enumerate}
+
+One thing to mention is the decision chosen for how to fetch JavaScript files and HTML template files. In chapter 3, we discussed two ways of doing this, either lazily, or eagerly (all at once). At first, I went with a lazy loading approach, where templates and JavaScript files were fetched only when needed. However because these files are many and small-sized, and the browser sets up one HTTP connection for every file, it lead to a lot of unnecessary HTTP round-trips. Therefore, I chose to merge all the JavaScript files and HTML templates into one single JavaScript file. In addition I have compressed the file in order to minimize the initial fetch of the \textit{App}. The result was much better, because the browser would never have to ask for JavaScript or HTML resources after the initial phase. However, had the code base been significantly larger, this approach would possibly not have been an optimal solution. 
+
+\subsection{Router}
+The Router is the component that organizes routing between the Shredhub's main pages. Normally, trigging a hyperlink in a Web page would make the browser send the request directly to the server. This however, is unwanted in Architecture 2.0, because the front-end is supposed to decide when and how to contact the server. This is where the Router comes in. The Router is configured to listen to every hyperlink-event so that when such an event is triggered, the Router is notified, and it will call the \textbf{event.preventDefault()} function on the browser, which in effect tells the browser not to issue the URL request to the server. This way the Router has \textbf{hijacked} the request, and is now able to decide what will happen.  
+
+To some extend, the Router works as a controller from \textit{Reference-model 1.0}, in that it receives a particular page request (for example www.shredhub.com/shredders), and performs the necessary work to handle the request. In Shredhub, there are five different hyperlink possibilities; one for each of the five main pages. Thus there will be five controller handlers, or routes, as they are called in Architecture 2.0. After the router has hijacked a URL request from the browser, it will call the route handler for that particular URL. A URL-handler mapping is configured in a file called router.js. It looks like this:
+
+\begin{enumerate}
+\item{} 'shredPool': 	'renderShredPoolView', \textit{//www.shredhub.com/shredpool}
+\item{} 'shredder/:Id':	'renderShredderView', \textit{//www.shredhub.com/shedder/<shredderId>}
+\item{} 'shredders': 	'renderShreddersView', \textit{//www.shredhub.com/shredders}
+\item{} 'battles/:Id':	'renderBattleView', \textit{//www.shredhub.com/battles/<battleId>}
+\item{} '*actions':	'renderHomeView' \textit{ //www.shredhub.com}
+\end{enumerate}
+
+\subsection{Models}
+The models represent the domain resources of the application, which implement both business logic and data attributes. Hence they implement the Domain Model design pattern. I chose this as opposed to having a separate service layer. An additional service layer does result in more decoupling and separation of concerns (business operations and data holders in this case), but it also leads to more code and additional source code files. In this architecture, less code and files are to some extend preferable, considering these are data that must be transmitted over HTTP.
+
+Models also use the Active Record design pattern, meaning they are responsible for knowing how to perform CRUD operations on themselves. Thereby avoiding additional modules that concerns only the data source handling. Now, because the database lives on another physical machine, CRUD'ing happens via HTTP. This is done with AJAX, so that API communication happens asynchronously, and in effect won't block when data is needed from the back-end. An example of a business operation in the model is showed in section ~\ref{sec:bmodel} in Appendix B. 
+
+\subsection{Collections}
+Considering that the application has many ``collections'' of models, for example a list of Shredders on the Shedders page, multiple rows of Shreds in the Shred-pool page etc, it makes sense to encapsulate these models in separate modules (collections). This way, a collection is a container for multiple coherent models. The motivation for this, is that the collections can also work as Active Records, in that they can be responsible for fetching and maintaining a particular set of Shreds or Shredders from the database, regarding the collection of models they control. For example a Shred-Collection representing a row of top-rated Shreds, would know how to fetch the top-rated Shreds from the API. 
+
+\subsection{Views}
+The set of pages in Shredhub are in Architecture 2.0 separated into logical coherent views. These views are JavaScript objects that hold a reference to one or more HTML templates that it is responsible for maintaining. This means the view handles all the user-interactions that happens inside the HTML it represents.  A View contains zero or more model and Collection objects, such that it knows how to visualize these domain objects. Also, the models are used to delegate business operations to. The view's main job is to render its HTML template(s) together with its containing set of collections and/or models. In addition, the view is responsible for maintaining state for the particular HTML portion of a page it represents. A view can contain one or more sub-views, such that views can form a tree of views. Views are created ether by the Router when a page is to be rendered, or by a parent view, when it needs to create a child view that will render a smaller part of HTML inside the current view. Views are deleted and added whenever a new page is to be rendered in Shredhub, and also when minor parts of a page is to be rendered. The set of views in Architecture 2.0 is given in table \ref{table:theSetOfViews}.
+
+\begin{table}[htbp]
+  \centering
+  \begin{tabular}{|p{4cm} | p{8cm}|}
+    \toprule
+    View Name & Responsibility \\ 
+    \midrule
+    Scaffolding View & Contains the header and footer that is contained in every page. Always wraps one sub-view \\ 
+    Home View & Represents the login page. Wraps a set of sub-views; a list of ShredThumbnail Views, and a ShredModal View \\ 
+    Shredpool View & Represents the Shredpool page. Wraps a set of ShredRow Views and a ShredModal View \\ 
+    Shredders View & Represents the list of Shredders page \\
+    Shredder View &  Represents the Shredder page\\ 
+    ShredRow View & Represents a particular row of Shred thumbnails. Maintains state for the row, so that it knows when to advance to a new row in the same collection of Shreds.  Each column in a row is wrapped in a ShredThumbnail View\\ 
+    ShredThumbnail View & Represents a Shred thumbnail, consisting of a thumbnail image, and metadata about the Shred. Notifies the mediator if the Shred was clicked, in order to tell it to open a ShredModal View to play the Shred itself \\ 
+    ShredModalView & Represents the popup window that plays a Shred. Handles user events like rate button clicked and comment text submitted  \\ 
+    \bottomrule
+  \end{tabular}
+  \caption{The set of views that are implemented in Architecture 2.0}
+  \label{table:theSetOfViews}
+\end{table}
+
+\subsubsection{Event handling}
+Each view is set up to listen to certain events that are relevant to that view. For example a ShredRowView is initialized to listen to the \textit{next-row} button clicked, and a ShredModal view is initialized to listen to the \textit{rate} button. In each view, there is an \textbf{event handler} function for every event it listens to. In Architecture 2.0 I have separated the types of events into two: \textbf{View logic events} and \textbf{Domain logic events}. A view logic event is something that simply manipulates the DOM tree in order to alter the HTML. A Domain logic event however is more like a controller handler from Architecture 1.0, where the event requires some business operation to be executed.
+
+When a view is to be deleted (in favor for some other view to be rendered ``over it''), all its DOM elements must be removed. Also, it is especially important to remove any event listeners the view has registered. If they are not removed, they will continue to exist and listen to events, so that if a view is recreated, its old events will co-exist with the newly created event listeners. Now, when an event is triggered, there might be multiple listeners listening to that event, and in affect calls to the same handler function, so that it is executed more then once. The result could be multiple equal write operations sent to the database. Also, this could lead to slow performance, because the listeners consumes memory. This is a problem that often occurred during the implementation of Architecture 2.0, especially because many of the views in Shredhub have multiple child views. The solution was to implement a recursive remove function that is called on a view and all its children whenever a view is to be removed. This function removes the DOM elements for the view, and deregisters all its event listeners. An example of how a view is implemented can be found in section ~\ref{sec:bview} in  Appendix B. 
+
+
+\subsubsection{HTML Templates}
+Each view knows where in the DOM tree to put the particular HTML template(s) it is responsible for. For example the ShredRowView that represents the ShredRow of top-rated Shreds holds an HTML template called \textit{ShredsRow\_topRated.HTML}, which the view will inject into the HTML tag \textit{<div id=``topShreds''></div>}. Just like JSP template files in Architecture 1.0, the templates in Architecture 2.0 are not pure HTML files, but contains special syntax that can reference model data, and supports loop statements, conditional statements and other simple programming language statements. However, there is a big difference between the way I have implemented templates in Architecture 1.0 from Architecture 2.0. In Architecture 1.0, the templates were coarse grained, and contained a lot of view logic to decide the outcome of the HTML. In Architecture 2.0, I have decided to create many, and smaller fine-grained HTML templates, and factorize out as much view logic as possible into the view. This is often done by letting views have references to multiple fine-grained HTML templates. These all have the advantage of being able to be reused in other parts of the app. Also, I have implemented a couple of fine-grained views, that are being  reused across the app. For example, a ShredThumbnailView is reused as a child view of other views who need to display Shred thumbnails. 
+
+Abstracting view logic out of the HTML templates and into the views, facilitates a better decoupling of HTML markup and view logic. This decoupling was not achieved in Architecture 1.0. One example: In Architecture 1.0, the ShredderView.JSP contained many if-checks to figure out the relationship the user had with the particular Shredder that was to be displayed. A unique HTML output was to be created depending on: 
+\begin{itemize}
+\item{} if the visited Shredder is actually the same Shredder as the user
+\item{} else if the user has sent the Shredder a battle request
+\item{} else if a battle request from that Shredder is currently pending
+\item{} else if they are currently in a battle
+\item{} else; the user should then challenge the Shredder to a Battle
+\end{itemize}
+Therefore, the JSP template had to include HTML markup for every possible outcome, and depend on complex JSP if-conditions to know which part of the HTML to render (together with the rest of the JSP page of course!). In Architecture 2.0, all of this is figured out \textbf{before} the rendering process begins. Now, the HTML for displaying each of these five different Shredder relationships are represented in separate (fine-grained) HTML template files. This way, when the rendering process begins, the view will pick the proper HTML template depending on the result of the if-check, and inject this template into the DOM. In effect, the templates contain very little view logic, only enough to display the data from a model object it receives when the HTML is to be rendered. 
+
+\subsection{The Mediator}
+There are many cases in which disparate components need to communicate with each other in the \textit{App}. For instance, separate views need to communicate with each other, and sometimes views need to communicate with model objects they don't necessarily have direct references to. In order to facilitate a loosely coupled, flexible and efficient communication model, I have chosen to use the Mediator design pattern
+\cite[p. ~305]{facade}. This is a component where views and models can publish and subscribe to certain events, such that when someone publishes to the Mediator that an event has happened, the Mediator will notify every listening entity (subscriber), and call all of the handler functions the subscribers have registered with the Mediator. This solves the need to have many object references in every view and model in order to call functions across the objects.
+
+\subsection{Session}
+In Architecture 2.0, state is completely implemented on the client so that the server has no awareness of any logged-in user or session. To do this, the \textit{App} must have a way of storing and manipulating state data on the client. This could be done by storing data in the browsers JavaScript memory, considering there is never necessary to do a page refresh, meaning the JavaScript heap will never be flushed.  Unfortunately, this could negatively affect the browser's performance if the data size grows quite large, and also, if the user would happen to manually refresh the page, the JavaScript memory is cleared. It could also be done by storing all the state inside cookies, but this is not as secure considering the state data would need to be included in every HTTP request. This of course, would also waste and consume very much bandwidth. The solution chosen is to use HTML5 WebStorage, which neither affects browser performance, or is subject to data loss on page refreshes. The storage size is big enough to hold many megabytes of data (depends on the browser), so in practice there is no need to limit how much user data to store in the browser. I have chosen to use session storage and not local storage, so that state data is restricted to a session. This is because the data I store in Web storage is naturally bound to a ``session'', and shouldn't last for any longer then this. There is one misfortune with this design decision however; some old browsers do not implement HTML5 Web Storage. Now, I have not have the time to design a backup solution for such users, however a simple approach is to check during the bootstrap process if the current browser supports Web Storage, and if not, use the browser's JavaScript memory or cookies to store state data.
+
+The \textit{App} uses sessionStorage to store user data only, considering much of the other state data is maintained in the views (i.e JavaScript memory). The storage is populated with user data when the user is authenticated. This data includes:
+
+\begin{itemize}
+\item{} User profile data, such as username, address, birthdate, list of guitars etc
+\item{} Authentication details (a token made up of username and password)
+\item{} List of the user's fanees
+\item{} List of the user's current sent and pending battle requests 
+\item{} List of the user's current battles
+\end{itemize}
+
+The Session module mentioned previously is a facade that wraps the browser's session storage API.
+
+\subsection{Summary of The Front-end}
+The front-end in Architecture 2.0 is a large-scale JavaScript application that is loaded into the browser when the user first accesses Shredhub. A special module is configured to ``hijack'' hyperlink events in order to avoid that the browser automatically sends requests to the server. Instead, every user action is handled in the front-end code. 
+
+In addition, state and session handling is completely handled in the front-end, and server communication is only done via AJAX calls. This way, browser refreshes will never occur. 
+
+
+\section{The Back-end}
+\subsection{The Rest API}
+The Rest API is the communication boundary between the \textit{App} and the server. The back-end exposes all of its available operations through the Rest interface. For each domain object, there are four type of operations, one for each HTTP method: \textit{Get, Post, Put} and \textit{Delete}. Now, in order to offer more complex operations then just a combination of a resource and an HTTP method (e.g Get + Shred Id), the Rest API adds an additional verb that describes a specific operation that is to be performed. An important property of the Rest operations is that they are self-contained, in that they have all the state information needed to perform the operation. Take for example the following URL: 
+
+\url{GET: api/shreds/NewShredsFromFanees/5142b8fc174328d087ac49b9/?offest=20&page=3}
+
+The long string represents a unique Id (uid) for a Shredder. With this request the back-end will query the database for a set of Shreds that are made by the Shredder with the given uid's fanees. The returned list is a set from the query result, starting at result number 3*20, and the size of the result being 20 Shreds. In addition to the URL, the HTTP request contains an authentication token that the API uses to verify that the user is allowed to perform the operation. The \textit{App} appends this token to the HTTP Authorization header parameter in every API request. In this example, the API would fetch the user that is given in the authentication token from the database, and verify he has the exact same user id as the one given in the URL. If so, the API operation is executed. In a similar operation in Architecture 1.0, the back-end would look at the Session object that's in memory to get the user who issued the request, and by knowing what page number the user is currently at (also stored in a session object), and the amount of Shreds that are displayed on the current page, the back-end would have all necessary information to issue the request. Thus all the necessary information in that case is on the server, while in Architecture 2.0, all necessary information is in the HTTP request. 
+
+Another example is when a new domain object is to be stored in the database. In this case, a raw JSON object is sent to the API, which would put the data (HTTP payload) directly in the database without any marshalling:
+\begin{lstlisting}
+
+Request URL:HTTP://localhost:3000/api/shreds
+Request Method:POST
+Content-Type:application/JSON
+Request Payload
+{"description":"Sweet Shred in C-minor",
+"shredRating":
+{
+	"numberOfRaters":0,
+	"currentRating":0
+},
+"shredComments":[],
+"owner":
+{
+	"_id":"5142b8fc174328d087ac49b9",
+	"username":"Michael"
+},
+"tags": ["Scale","Speed-picking","Melodic"],
+"shredType":"normal",
+"timeCreated":"2013-03-18T12:24:13.363Z",
+}
+\end{lstlisting}
+
+Every Rest operation returns with a status code, indicating if all went well, in addition to the result from the database query. The status code is one of the HTTP status codes which serves to inform the client if the operation was successfully executed or not. The HTTP status codes used are:
+\begin{itemize}
+\item{}200 OK, meaning the operation was performed, and the response contains JSON data
+\item{} 400 Bad Request, meaning the user tried to perform an operation with illegal input parameters. An example is if the user tried to add a rating to a Shred with a value higher then 10.
+\item{} 401 Unauthorized, meaning the user is not allowed to issue this request. An example is if the user tried to add a Shred, and the owner is set to reference a Shredder who's un-equal to the Shredder identified in the authentication header.
+
+\end{itemize}
+There are many other status codes supported by HTTP, which I could have used in order to enrich the error messages used in the application. However, this goes a bit out of scope for this thesis. The point here is to show how error handling can be done in a stateless and decoupled fashion; the back-end does not know how the \textit{App} treats the error message. This is apposed to Architecture 1.0, where in cases of an error, the server will return a completely rendered HTML error page back to the client. 
+
+\subsection{The Data Repository Layer}
+The data repository layer is the part of the back-end that implements the Rest API and communicates with the database. It is organized as a set of controller modules; one for each domain resource. Much like controllers in Architecture 1.0, the controllers in Architecture 2.0 are mapped to a specific URL. However, instead of going through a complex domain logic layer, and data source layer, the controller's responsibility is much simpler. Most importantly, it doesn't generate views, just pure JSON data. Generally a controller handler does:
+\begin{enumerate}
+\item{} Validate the parameters given in the URL query string, request body and authentication header.
+\item{} If there is illegal input, send a proper HTTP status code back to the client.
+\item{} If not, create a database query with the URL arguments and request body and execute a query on the database.
+\item{} Send the result (without marshalling) back to the client. 
+\end{enumerate}
+
+\subsection{Authentication}
+Authentication in Architecture 2.0 is implemented with the HTTP Basic Access Authentication protocol\cite{httpauth}. The reason this was chosen is because it conforms to \textit{Reference-model 2.0}, where the server must be stateless, and HTTP basic auth does not rely on any session or cookie. The \textit{App} authenticates users through the Rest API by concatenating the user's username and password into a base64 encoded string. This string is appended to the HTTP authentication header parameter, and is sent with every API operation (except the initial request for the home page).
+
+HTTP basic access authentication is not a very complex, and especially not secure protocol, considering the data is not encrypted. A first improvement would therefore be to enforce the use of HTTPS in order to properly encrypt the username and password. Other authentication protocols could also have been chosen. One popular solution is OAuth\cite{oauth}, which is much used in Web 2.0 applications. However, this is a somewhat complex protocol that requires some effort to implement.
+
+\subsection{The Databases}
+There are two databases used in Architecture 2.0. The reason for this is because I have two different persistency needs. One is to persist the domain model in a flexible and efficient way, which is done with MongoDB. The other is to have authentication data available in a highly efficient manner, which is done with Redis.
+
+\subsubsection{User Authentication With Redis}
+ In Architecture 2.0, the authentication token needs to be verified in every URL request except those regarding the home page. Therefore, the back-end must have a highly efficient way to authenticate each API request. By using Redis, I store two key-value pairs for each user, one that maps a username to a unique Id, and the other maps the unique Id to the password that belongs to that user. The unique Id is the same unique Id that is used for that particular user in MongoDB. An example of a user in Redis looks like this (The long string represents a unique Id):
+\begin{lstlisting}
+username:Michael:uid 5142b8fc174328d087ac49b9
+uid:5142b8fc174328d087ac49b9:password 1234
+\end{lstlisting}
+Keys are on the left-hand side of the white space, while values are on the right. The colons are used to infer a descriptive semantic. For example the key \textit{username:michael:uid} describes the value \textit{unique id for an entity with username equal to ``Michael''}. A similar semantic applies to the second key-value pair. In order to authenticate a user, the backend does the following lookup (in pseudocode):
+\begin{lstlisting}
+
+function authenticateUser(username, password) {
+
+	// Create a string on the form ``username:<username>:uid'':
+	usernameStr = ``username:'' + username + ``:uid'' 
+	get the value with key=usernameStr from Redis, put result in res
+	
+	if ( success ) {
+	// A user exists with the given username. Now check the password
+	 // Create a string on the form ``uid:<uid>:password''
+	var uid = res.toString();
+	var passwordStr = "uid:"+uid + ":password"
+	get the value with key=passwordStr from Redis, put result in res
+	
+	if ( success ) {
+	 if ( password === res.toString() ) {
+	 // Correct password was given. Return success together with the uid 
+	 }	
+	}	
+	// Authentication failed, return proper error message
+} 
+\end{lstlisting}
+The uid is returned so that it can be used to fetch the newly authenticated Shredder from MongoDB. 
+
+The reason Redis was chosen is because of its extremely high speed when it comes to simple key-value pair lookups. Redis is not meant for complex and structured data, but is specialized to operate on simple HashMap data structures. Also it favors speed over durability, something that is preferable in this occasion, considering the only time I perform write operations to Redis is when new Shredders are created. At this point, I eagerly write a snapshot to disk in order to force durability. 
+
+Other alternative solutions could have been to use for example Riak, or Voldermort. However, these favor distribution and very high availability over speed, which is the reason why I chose Redis instead.
+
+\subsubsection{MongoDB}
+The domain in Architecture 2.0 is persisted using MongoDB. The reason I chose MongoDB for this, is mainly because it uses a JSON-like format to persist data, which is a very nice fit for the domain; much of the domain in Shredhub can be modeled as a nested structure, which is very appropriate to implement with JSON. This nested data structure is very typical Web 2.0 applications that have blog-posts and comments (with commenters). Also, considering the MongoDB database can be manipulated directly using JavaScript, there is no need to implement additional data mappers for creating queries and marshalling of query results. A final reason I chose MongoDB is because of MongoDB's schema-less document model, allows for highly flexible data modeling solutions. Thus, I can very easily customize my MongoDB documents to fit the data exactly like they are displayed in the \textit{App}. This does require some duplication of data, but it does avoid relations across the documents, that normally requires join operations in order to fetch the necessary data. Another compelling NoSQL solution is to use CouchDB, which also support direct database manipulation with JavaScript. However, I went with MongoDB mainly because it's probably the most popular NoSQL database as of 2013\cite{mongopopular}.
+
+An example of the set of MongoDB collections implemented i Architecture 2.0 is given below:
+\begin{lstlisting}
+// Shredder
+
+"_id" : ObjectId("5142b8fc174328d087ac49f7"),
+"username" : "Shredder64",
+"fanees" : [
+		{
+			"_id" : ObjectId("5142b8fc174328d087ac49f5"),
+			"username" : "Shredder62",
+			"profileImagePath" : "shredder62profile.jpg"
+		}
+],
+"birthdate" : ISODate("2013-03-15T06:00:28.202Z"),
+"country" : "Denmark",
+"profileImagePath" : "shredder64profile.jpg",
+"email" : "shredder64@htomails.com",
+"guitars" : [
+	"Gibson flying v"
+],
+"equiptment" : [
+	"Marshall JCM 800"
+],
+"description" : "Simple test shredder #64",
+"timeCreated" : ISODate("2013-03-15T06:00:28.202Z"),
+"shredderLevel" : 84
+\end{lstlisting}
+
+\begin{lstlisting}
+// Shred
+
+"_id" : ObjectId("5142b90a174328d087ac4a2e"),
+"description" : "Simple test shred #19",
+"owner" : {
+	"_id" : ObjectId("5142b8fc174328d087ac49c4"),
+	"username" : "Shredder13",
+	"imgPath" : ``Shredder13Image.jpeg''
+},
+"timeCreated" : ISODate("2013-03-15T06:00:42.313Z"),
+"shredType" : "normal",
+"shredComments" : [
+	{
+		"timeCreated" : ISODate("2013-03-15T06:00:42.313Z"),
+		"text" : "This is a very nice Shred!",
+		"commenterId" : ObjectId("5142b8fc174328d087ac49ea"),
+		"commenterName" : "Shredder51"
+	},
+],
+"shredRating" : {
+	"numberOfRaters" : 946,
+	"currentRating" : 8188
+},
+"videoPath" : "shred11234.mp4",
+"videoThumbnail" : "shred11234_thumb.jpg",
+"tags" : [
+	"Fast",
+	"Sweeping",
+	``Tapping''	
+]
+\end{lstlisting}
+Similarly there are collections for Battles and BattleRequests. An example of how a Shred is fetched from MongoDB on the back-end is given below:
+
+\begin{lstlisting}
+exports.getShred = function(id){
+   Shred.findById(id, function (err, shred) {
+    return shred;
+  });
+}
+\end{lstlisting}
+Notice no marshalling needs to be done, because the object that is fetched is simply a JSON object. 
+
+% Use the code examples!
+\subsubsection{Discussing MongoDB over SQL for Shredhub}
+Notice in the example above, there are only 4 different MongoDB collections. This can be compared with the SQL implementation from Architecture 1.0 that is implemented with 16 tables. The reason I have chosen to limit the amount of collections as much as possible is to avoid the tedious join operations that would normally be needed in SQL. Joins are very slow, and also, they are not natively supported in MongoDB. One has to manually implement joins by performing multiple subsequent read operations across documents. My solution however emphasizes the use of duplicating data so that documents fit the domain in the way they are visualized in the \textit{App}. Look for example at the Shred document in the example above. The owner consists of his Id, username and image path. Also, the comments contain the comment-owner's Id and username. This is exactly enough data that is necessary in the \textit{App}, in order to visualize the Shred. In a normalized SQL (i.e Architecture 1.0) implementation the owner would just be represented by a foreign key, and during a Shred-fetch a join operation would have to be done for the Shred-owner, all the comment owners, every tag, and every rating. 
+
+One misfortune with this design, however, is if any of the duplicated values were to change in the original document. For example if the Shredder with name Shredder13 was to change his profile image. In this case this update would have to be propagated to every place in the database where that particular image is referenced. However, I have acknowledged this fact simply because profile images aren't something that is likely to change very often. Another misfortune is that the database is somewhat App-aware. Imagine the API was to be used by other clients, maybe third party clients that would have other requirements to the amount of data that is populated with a particular fetch operation. One could argue that this customized duplication of data is somewhat specialized and enclosed for future needs. However, I state that this data modeling decision is still very flexible, considering every domain resource always include their uid, making it possible to force join operations if more data needs to be  populated in a given query. 
+
+A big advantage with the MongoDB design however, is that no mapping needs to be done when objects are fetched and stored in the database. This reduces the amount of boilerplate code needed, and simplifies the whole programming environment both on the back-end and front-end, because only one common data structure is used. Consider for example the difference between the getShred function above, and the getShredById function in Architecture 1.0, which required a separate ShredMapper class. Now, the latter could be avoided by using an ORM tool, but there is still a lot of boilerplate code with that solution, it is just hidden in a separate third party code package.
+
+In addition, many benchmarks\cite{mongosql}\cite{mongosql2}\cite{mongosql4}\cite{mongosql5} show that MongoDB performs faster then various SQL databases. However, a study for benchmarking database performance in a social network application shows that MongoDB and a SQL implementation performs rather equal, but a SQL solution mixed with a caching system (Memcached\cite{memcached}) is superior\cite{mongsql3}.
+
+\subsection{Summary of The Back-end}
+The back-end is built as a Rest API that exposes a set of self-contained and stateless operations.
+
+The API uses an authentication mechanism that does not rely on server-side state. Therefore, every API request must be authenticated. This is done very fast by using a key-value database that is kept in memory. 
+
+MongoDB was chosen to persist the domain objects, because it avoids having to do marshalling, and does not enforce any structure, so that data can be stored exactly like it should look like in the user interface.  This requires some duplication of data in the database. A potential drawback with this design is that the data is somewhat rigid.
+
+ \section{Summary}
+In this chapter we have looked at Architecture 2.0, a thick-client JavaScript Web app built with NoSQL technologies. The responsibility of the back-end is rather simple, merely to serve as a central data-repository layer for the database, and to send the front-end application to the browser on initial requests.
+ 
+The front-end application has a decoupled structure where the code is organized into coherent modules. The front-end avoids letting the browser automatically contact the server, by hijacking hyperlink events. It is responsible for maintaining state, and perform business logic operations.
+ 
+The back-end is built around a Rest API that exposes self-contained operations to client users, and it communicates fine-grained objects instead of HTML pages. 
+

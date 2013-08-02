@@ -1,0 +1,435 @@
+\chapter{Performance and Source Code Analysis}
+\section{Introduction}
+A major goal for any interactive Web application is to minimize the response time for user actions, because it has a significant impact on the user-experience. users most often do not have patience to sit around and wait for slow page requests, which in some cases could result in users abandoning the site in favor of other competitors.  The response time for such an action is a measurement of the time it takes from when the user initiates the action, until the result is completely visible in the browser. An action might be that the user clicks a button, follows a hyperlink, presses the enter key in a search field etc. 
+
+To analyze and compare performance and scalability properties for Architecture 1.0 and Architecture 2.0, a number of system tests have been designed and executed in real deployment scenarios. Equal tests have been run on both prototypes. Now, one important thing to mention is that the performance of the architectures to some extend depend on the Web framework.\footnote{The interested reader can check out\cite{frameworkbench} for an extensive performance comparison of popular Web frameworks.} So considering the fact that the architectures use two different frameworks (Node.js and SpringMVC), might cause subjective results for comparison. However, I was aware of this fact before I chose to use two different Web frameworks, and therefore I  built Architecture 2.0 with SpringMVC as well (not really a big effort, just a matter of implementing the API in Java). The performance results for Architecture 2.0 on Spring vs Node.js were very similar, and therefore I chose to do all the testing based on the Node.js version. 
+
+A final goal for this project is to analyze and compare the source code quality for the two architectures. The source code is to be measured in terms of code flexibility and maintainability, which is an important property in order to facilitate future code modifications and extensions. Now, such a comparison is a difficult and laborious task, and it is somewhat difficult to measure code quality. Therefore the analysis of the source codes is somewhat short, and partly given in terms of opinion. However, a proper test case has been designed and implemented on both architectures, and the results are relevant. We look at this in the end of the chapter.
+
+In this chapter we will look at the tests that have been designed, and the results for these.
+
+\section{Web Application Performance}
+The response time for Web apps depend on many different factors. In general, these are:
+\begin{itemize} 
+\item{} Application server's throughput, which concerns how many requests the application server can handle per time unit. 
+\item {} Database server's throughput, which concerns how many transactions the database can handle per time unit
+\item{} Client-tier efficiency which concerns how fast the browser can render and display the result of a user-action. Often this depends on the JavaScript implementation that is required to display the result.
+\end{itemize}
+There are also other factors that affect the response time of a Web app, such as network performance and the hardware that hosts the client and the server. However, these issues will not be considered in this thesis, mostly because performance tuning these elements does not directly indicate any pros or cons in the two Web architectures that have been studied in this thesis. 
+
+Another performance concern is the application server's scalability. Scalability is a measurement of resilience under ever-increasing load. As such, another goal is to maintain the performance levels when the number of concurrent users increases, and to support as many simultaneous users as possible. Scalability also depend on the application server's throughput, and the database server's throughput. 
+
+\begin{table}
+    \begin{tabular}{| l | l |}
+    \hline
+    \textbf{Operation System} & Fedora 12                         \\ \hline
+    \textbf{CPU Architecture} & Intel(R) Core(TM)2 Quad CPU Q8400 \\ \hline
+    \textbf{CPU Clock Speed}  & 2.66GHz                           \\ \hline
+    \textbf{CPU Cache Size}   & 2048 KB                           \\ \hline
+    \end{tabular}
+    \caption{Computer specifications for the test server}
+    \label{table:machines}
+\end{table}
+
+\section{Hardware and Software Used for Testing}
+Both prototypes have been deployed on a test machine stationed in Madrid, Spain. The machine was hosted by PlanetLab\cite{planetlab}, a global network of computers made available for researchers to develop, deploy and test distributed systems. The reason I chose to deploy it in Spain was in order to get realistic transmission times. The system specifications for the test machine are given in table ~\ref{table:machines}. 
+
+
+
+%\newcolumntype{R}{>{\raggedleft\arraybackslash}X}%
+%\begin{tabularx}{\textwidth}{ |c|c|}
+%\begin{tabular*}{0.75\textwidth}{@{\extracolsep{\fill} } | c | c | }
+  %\hline
+  %Operation System & Fedora 12  \\ \hline
+  %CPU Architecture & Intel(R) Core(TM)2 Quad CPU Q8400 \\ \hline
+  %CPU Clock Speed & 2.66GHz \\ \hline
+ % CPU Cache Size & 2048 KB \\ \hline  
+%\end{tabular*}
+
+
+Performance testing was made with the Chrome Developer Tools\cite{chrometool}, which is a browser feature for the Chrome browser\cite{chrome} that captures URL requests, and monitors JavaScript executions. The tool not only calculates the complete response time, but also gives a detailed overview of the times spent for each individual Web resource that is fetched from the server. Both Mozilla Firefox and Internet Explorer have similar tools for Web performance testing and profiling, and they mostly deliver the same functionality. I chose to use Chrome simply because I am familiar with it, and it doesn't require any extra plugin installation. 
+Stress testing the server was done with Apache JMeter\cite{jmeter}, which is a Java program that is able to execute and monitor multiple threads. These threads can be configured to do HTTP requests.
+
+\section{Performance and Scalability Tests}
+In this section, we look at the concrete tests that have been made, and the results of these. The tests are separated in five different sections. The first two tests investigate the performance of the prototypes by inspecting request response times, the third test investigates the scalability characteristics of the prototypes by stress testing the back-end implementations, the fourth investigates database speed, and the last test investigates the architectures' source code in terms of flexibility and maintainability. This analysis lacks a test case that investigate the database's throughput properties. Unfortunately I did not have time to create this test. 
+
+For testing purposes, an equal set of dummy objects was created in the two databases. These are:
+\begin{itemize}
+\item{} 1000 Shredders 
+\item{} For every Shredder, a number from 0 til 10 fanees
+\item{} 100000 Shreds
+\item{} 100000 Battles
+\item{} 10000 Battle requests
+\end{itemize}
+
+%% FORTSETT HER!!
+\subsection{Test 1 - Page Loading Tests}
+\textit{Goal: To determine how fast the prototypes create the major pages of Shredhub. Also, to investigate the times spent in the various phases during a request}\\
+\textit{Tests: Response time}\\
+The page loading test is meant to investigate the amount of time the user has to wait from the time a URL is requested, until the  page is displayed in the browser. This test is important in order to identify which of the two prototypes are capable of creating a page the fastest. 
+
+The page loading test was performed actively by a human user. The tester would either, for the initial page, write the URL in the address bar of a Web browser and press the enter button, otherwise, the tester would click on a link inside Shredhub that leads to the given page. I have chosen to use the Chrome Web browser to run the tests, because it comes with the Chrome developer tools. Every test was done 5 times, in which the test results show the average of these.
+
+The result figures show the complete round trip times for all the different server requests. These results are displayed in waterfall figures, which naturally depict the ordering of the different resource fetches. The waterfall models also capture the fact that some resources depend on each other in order to start fetching. For example, the browser will start fetch CSS/JS resources as soon as it has gotten the HTML page from the server. Every result figure shows:
+\begin{itemize}
+\item{} Time taken for the server request
+\item{} Time taken fetching CSS and/or JavaScript resources
+\item{} Time taken fetching images
+\item{} Time when the DOMContentLoaded, and OnLoad events are triggered
+\item{} Total time spent on server
+\item{} Amount of data received from the server (without images)
+\item{} Page rendered:  the time it was fair to say the page is visible in the browser
+\end{itemize}. 
+The results are measured in milliseconds. The last timing represents the time when everything but the images were completely rendered. This is because rendering images is the last thing the browser does (in the case for Shredhub), and it says nothing about the performance differences for the two prototypes. For Architecture 2.0, I have chosen to indicate the amount of time spent doing AJAX requests to the server (the timings concern the time it took on the server + HTTP transmission times), as well as showing the time of the \textbf{last JavaScript execution} in the \textit{App}. The last JavaScript execution indicates the time when the \textit{App} has rendered every necessary HTML template and written this to the Dom. Thus this is when I acknowledge that the page is finished and displayed in the browser. As for Architecture 1.0, the first request in the waterfall model always represent the time it took to process the request on the server plus the HTTP transmission times regarding this. I acknowledge that the page is finished and displayed in the browser when the DomContentLoaded event is triggered, because this is when the browser has rendered every element in the HTML page. 
+
+ Note that the tests were performed on a somewhat slow network connection. This explains the slow timings, especially for image resources. However, because the testing on the two prototypes was done on the same network connection, the network overhead isn't relevant for the test results. 
+
+The URLs that have been tested are:
+\begin{enumerate}
+\item \textit{www.shredhub.com/}
+\item \textit{www.shredhub.com/theshredpool}
+\item \textit{www.shredhub.com/shredders}
+\item \textit{www.shredhub.com/shredder/<UID>}
+\end{enumerate}
+All of the pages except the first one requires the user to be logged in. In this case I have actively logged the user in before the real page loading tests were made. 
+
+Figure \vref{fig:shredhubPageTest} shows the result for loading \url{www.shredhub.com}.
+\begin{figure}
+\begin{center}
+\fbox{\includegraphics[width=\textwidth]
+{images/shredhubPageTest.png}}
+% Kommandoen \fbox tegner en ramme.
+\end{center}
+\caption{Test results for www.shredhub.com}
+\label{fig:shredhubPageTest}
+\end{figure}
+Architecture 2.0 is very much slower then Architecture 1.0. The reason is that Architecture 2.0 has to load a big pile of JavaScript (the whole \textit{App}!) before the browser can start to execute the JavaScript code in the \textit{App} that build the page. The \textit{App} also has to do an AJAX request to fetch the list of top shreds. Architecture 1.0 spends more time processing on the server, and the user has to wait ~532 milliseconds before he can see anything at all on the screen. An advantage with Architecture 2.0 here, is that the user can see a minor part of the page already after ~249 milliseconds. But this is just the scaffolding HTML that is contained in Index.HTML, which is basically just a ``Shredhub'' headline. However, it does give the user something to look at much quicker than for in Architecture 1.0. A final notice is that Architecture 2.0 sends more data to the browser. This is primarily because of the size of the \textit{App}.
+
+Figure \vref{fig:shredpoolPageTest}
+shows the result for loading
+ \url{www.shredhub.com/shredpool}.
+\begin{figure}
+\begin{center}
+\fbox{\includegraphics[width=\textwidth]
+{images/shredpoolPageTest.png}}
+% Kommandoen \fbox tegner en ramme.
+\end{center}
+\caption{Test results for www.shredhub.com/shredpool}\label{fig:shredpoolPageTest}
+\end{figure}
+Architecture 2.0 is displayed a little bit faster in the browser then Architecture 1.0, however the reason it is somewhat slow is because it has to perform 8 AJAX requests. The browser executes these in parallel (hence the 2180/8 ms for time spent on server), but it is still very time consuming. Architecture 1.0 is slow because it has to perform an HTTP redirect after authenticating the user. The real work happens during the work on rendering the Shredpool on the server. Altogether, Architecture 1.0 spends less time on the server, but is slower because of the redirect. Also, Architecture 1.0 sends more data. This is because the Shredpool HTML file is quite big.
+
+Figure \vref{fig:shreddersPageTest}
+shows the result for loading 
+\url{www.shredhub.com/shredders}.
+\begin{figure}
+\begin{center}
+\fbox{\includegraphics[width=\textwidth]
+{images/shreddersPageTest.png}}
+% Kommandoen \fbox tegner en ramme.
+\end{center}
+\caption{Test results for www.shredhub.com/shredders}\label{fig:shreddersPageTest}
+\end{figure}
+Architecture 2.0 is almost twice as fast as Architecture 1.0. This is because Architecture 2.0 only fetches a small set of JSON Shredders from the server, and executes only a little bit of JavaScript in order to render the new page in the browser.  As for Architecture 1.0, even though the execution on the server is quite fast, the result shows up late in the browser  because the page that is sent is quite big and it is time consuming for the browser to render the whole page. Again, Architecture 2.0 sends much less data to the browser then Architecture 1.0. It's just an array of 20 JSON Shredders.
+
+Figure \vref{fig:shredderPageTest}
+shows the result for loading 
+\url{www.shredhub.com/shredder/<UID>}.
+\begin{figure}
+\begin{center}
+\fbox{\includegraphics[width=\textwidth]
+{images/shredderPageTest.png}}
+% Kommandoen \fbox tegner en ramme.
+\end{center}
+\caption{Test results for www.shredhub.com/shredder<uid>}\label{fig:shredderPageTest}
+\end{figure}
+Again, Architecture 2.0 scores better, reasons being mostly the same as in the previous test. The \textit{App} merely has to perform a tiny bit of JavaScript in order to create the new page, and there is just one AJAX call to the server in order to fetch the necessary data. Architecture 1.0 on the other hand is slow for the same reasons as in the previous example; the page that is created is big, and the browser has to render it from the ground up once it is received from the server. 
+
+\subsection{Test 2 - Interactive User-Action Tests}
+\textit{Goal: Determine the response time for interactive user-actions on Shredhub} \\
+\textit{Tests: Response time}\\
+This test is investigating the response time spent when a user performs a particular interactive task on Shredhub. Unlike test 1, which is investigating response times when complete Web pages are requested, this test only concerns minor interactive actions that happens inside a page. Again, the results are showed in waterfall models that capture the various phases for each request. 
+
+The user-actions tested are:
+\begin{enumerate}
+\item \textit{The user clicks next on a shred row}
+\item \textit{The user clicks on a Shred that opens a new video window}
+\item \textit{The user comments a shred}
+\item \textit{The user rates a shred}
+\end{enumerate}
+Just like in Test 1, the Chrome development tool was used to investigate the round-trip time for each action. 
+
+Figure \vref{fig:nextshredrow} shows the result for user-action 1. 
+\begin{figure}
+\begin{center}
+\fbox{\includegraphics[width=\textwidth]
+{images/nextshredrow.png}}
+% Kommandoen \fbox tegner en ramme.
+\end{center}
+\caption{Test results for when the user clicks on next shred row}\label{fig:nextshredrow}
+\end{figure}
+% 2.0 faster because no server required.
+% 1.0 slow because form submit leads to 
+Architecture 2.0 is very much faster in this case. The reason is that it doesn't have to consult the server; the next set of Shreds was fetched when the Shredpool was first accessed, so it lives in the browser's JavaScript heap memory. It only has to render a few HTML templates and write the result to the DOM in order to show the new row of shreds. Architecture 1.0 is slower because it has to make an HTTP request to the server. Even though the next set of Shreds are cached in the session object, the HTTP round-trip adds to the cost of displaying the page. Notice also that Architecture 1.0 does a page refresh here, because it is an HTML form submit. This explains why so much data is sent from the server; Architecture 1.0 has to prepare the whole page on the server and send it to the client.
+
+Figure \vref{fig:openshredvindow} shows the result for user-action 2. 
+\begin{figure}
+\begin{center}
+\fbox{\includegraphics[width=\textwidth]
+{images/openshredvindow.png}}
+% Kommandoen \fbox tegner en ramme.
+\end{center}
+\caption{Test results for when the user opens a Shred window}\label{fig:openshredvindow}
+\end{figure}
+The results are basically the same as in the previous test. The only difference is now Architecture 1.0 spends even more time on the server, because it has to query the database for the Shred.  
+
+Figure \vref{fig:commentonshred} shows the result for user-action 3. 
+\begin{figure}
+\begin{center}
+\fbox{\includegraphics[width=\textwidth]
+{images/commentonshred.png}}
+% Kommandoen \fbox tegner en ramme.
+\end{center}
+\caption{Test results for when a user comments a Shred}\label{fig:commentonshred}
+\end{figure}
+In this case the results are fairly equal. However Architecture 1.0 is a tiny bit faster, simply because it doesn't execute as many JavaScript statements as Architecture 2.0. The reason for this is that the JavaScript in Architecture 1.0 are simple self-contained handler functions of less then 10 lines of code. The same functionality in Architecture 2.0 is implemented as part of a bigger code base, and has to go through several function calls and object instantiations in order to execute the action.
+
+Figure \vref{fig:rateshred} shows the result for user-action 4. 
+\begin{figure}
+\begin{center}
+\fbox{\includegraphics[width=\textwidth]
+{images/rateshred.png}}
+% Kommandoen \fbox tegner en ramme.
+\end{center}
+\caption{Test results for when a user rates a Shred}\label{fig:rateshred}
+\end{figure}
+The results here are fairly equal to the previous test. Architecture 1.0 scores a tiny bit better because there is a lot less JavaScript to execute in order to handle the request. 
+
+\subsection{Test 3 - Back-end Scalability Test}
+\textit{Goal: Determine how many concurrent requests the prototypes can support, and how quick the server handles requests under heavy load.} \\
+\textit{Tests: Scalability of the back-end implementations}\\
+This test was performed by creating multiple threads that executes a set of predefined actions on Shredhub. The actions are meant to simulate a normal flow of user-actions, to get a best-as-possible view of how well the server scales under common user-scenarios. The tests were created and executed with Apache JMeter. This was configured to have one test case that issues many subsequent actions: 
+
+\begin{enumerate}
+\item \textit{The user visits the home page}
+\item \textit{The user logs in and visits the Shredpool}
+\item \textit{The user uploads a shred}
+\item \textit{The user watches a shred}
+\item \textit{The user comments a shred}
+\item \textit{The user accesses the page www.shredhub.com/shredders}
+\item \textit{The user clicks on a particular shredder, which leads to the page www.shredhub.com/shredders/<uid>}
+\end{enumerate}
+
+Each thread (that is, a user) executes all these actions on the server, once. An appropriate ``thinking'' time was also added between every action.
+
+To perform stress testing,  JMeter was set up to generate an increasing amount of simultaneous threads until the server starts to return erroneous responds. Now, JMeter needs a given amount of time in order to be able to create enough threads without saturating the test computer. This is called the ramp-up time. JMeter was configured to create the number of threads T with a ramp-up time = N seconds, where N = T for values of T from 1 to 100. All subsequent amount of threads T were created with a ramp-up time of 100 seconds. The ramp-up period was configured this way, also in order not to create an unusual high hit rate on the server, which would be an undesirable condition. The client test machines weren't able to issue more then 300 simultaneous threads executing the test case. Therefore, I had to add a new test machine for every n*300 threads. The results are showed in figures \vref{fig:throughput} and \vref{fig:reqtime}.
+
+\begin{figure}
+\begin{center}
+\fbox{\includegraphics[width=\textwidth]
+{images/throughput.png}}
+% Kommandoen \fbox tegner en ramme.
+\end{center}
+\caption{Average number of requests handled per second}
+\label{fig:throughput}
+\end{figure}
+
+\begin{figure}
+\begin{center}
+\fbox{\includegraphics[width=\textwidth]
+{images/reqtime.png}}
+% Kommandoen \fbox tegner en ramme.
+\end{center}
+\caption{Average time spent per request}
+\label{fig:reqtime}
+\end{figure}
+
+%
+%\begin{table}
+%\begin{center}
+%    \begin{tabular}{| l | l | l | l |}
+%    \hline
+%	Users & Throughput & Avg Request Time & Error \\ \hline
+%	1 & 0.05 & 3.7 & 0 \\ \hline
+%	5 & 0.25 & 4.1 & 0 \\ \hline
+%	10 & 0.58 & 2.7 & 0 \\ \hline
+%       50 & 1.96 & 2.7 & 0 \\ \hline
+%	100 & 2.88 & 3.5 & 0 \\ \hline
+%	200 & 3.2 & 15.3 & 0 \\ \hline
+%       400 & 2.06 & 59.5 & 0 \\ \hline
+%	600 & 1.97 & 99.8 & 5 \\ \hline
+%    \end{tabular}
+%	\label{load1}
+%    \caption{Load testing results for Architecture 1.0}
+%\end{center}
+%\end{table}
+%
+%\begin{table}
+%\begin{center}
+%    \begin{tabular}{| l | l | l | l |}
+%    \hline
+%	Users & Throughput & Avg Request Time & Error \\ \hline
+%	1 & 0.06 & 0.6 & 0 \\ \hline
+%	5 & 0.27 & 0.4 & 0 \\ \hline
+%	10 & 0.53 & 0.43 & 0 \\ \hline
+%       50 & 2.27 & 1.45 & 0 \\ \hline
+%	100 & 3.95 & 2.5 & 0 \\ \hline
+%	200 & 3.8 & 3.3 & 0 \\ \hline
+%       400 & 5.9 & 9.7 & 0 \\ \hline
+%	600 & 4.54 & 15.1 & 0 \\ \hline
+%	800 & 6.38 & 16.3 & 0 \\ \hline
+%	1000 & 5.21 & 17.1 & 7 \\ \hline
+%    \end{tabular}
+%    	\label{load2}
+%        \caption{Load testing results for Architecture 2.0}
+%\end{center}
+%\end{table}
+The results show that Architecture 2.0 can handle more concurrent users then Architecture 1.0. In addition, Architecture 2.0 has relatively quick request times compared to Architecture 1.0. This makes sense, considering the server spends a lot of time rendering the HTML page and doing session and state management. A misfortune with Architecture 1.0 is that after 100 users, the request times were very high. The reason for this is mainly because of the high memory consumption on the server when the number of active users is high. The server can handle them, but the processing time is slow. I chose to stop increasing users after respectively 600 and 1000, because after this, the error percentage increased drastically.
+
+%
+%\subsection{Test 5 - System profiling}
+%\textit{Determine the throughput and efficiency in the various parts of the system to identity possible bottlenecks} 
+
+\subsection{Test 4 - Database Performance}
+\textit{Goal: Determine how fast the most common database queries in Shredhub executes}\\
+\textit{Tests: Database efficiency}\\
+This test investigates the speed differences in using a MongoDB (NoSQL) database versus a SQL database for Shredhub. The test was done by timing the query times spent when a user performs a given action that requires a database operation. A set of the most commonly used database queries were used as test cases. The timings start from the time the query instruction is made by the calling database handler, and ends when the result is mapped to a domain object (i.e a Java object for Architecture 1.0, and JSON object for Architecture 2.0). The test cases are designed to inspect at least one query from each of the four CRUD operations. Multiple Read operations have been checked, however, considering there are many different types of read operations in Shredhub. Every query was issued 10 times, with a different user, in which the results depict the average. The results are showed in table \vref{table:CrudResults}. 
+\begin{table}
+\centering
+    \begin{tabular}{| l | l | l | l |}
+    \hline
+	Query & CRUD & Architecture 1.0  & Architecture 2.0 \\ \hline
+	ShredsByRating & R & 244ms & 241ms \\ \hline
+	ShredsByFanees & R & 11ms & 68ms \\ \hline
+	ShredsByFaneesOfFanees & R & 202ms & 497ms \\ \hline
+       ShredsByTags & R & 212ms & 56ms \\ \hline
+	CreateShred & C & 64ms & 30ms \\ \hline
+	AddShredRating & U & 27ms & 16ms \\ \hline
+       DeleteShredComment & D & 33ms & 11ms \\ \hline
+    \end{tabular}
+    \caption{CRUD operations tested}
+	\label{table:CrudResults} 
+\end{table}
+The results are fairly equal, however, there are some differences. Operations for Architecture 2.0 that requires MongoDB to perform custom join operations, are generally slower. This concerns ShredsByFanees, and ShredsByFaneesOfFanees. Operations that require SQL to join while MongoDB does not have to join because of its nested structure results in performance gains for Architecture 2.0. This concerns ShredsByTags and create, update, and delete operations. 
+
+
+\subsection{Test 5 - Code Flexibility Test}
+In this section we look at a test case that is designed to test the code flexibility and simplicity in the two prototypes. In this test, a new interactive user feature was to be implemented on Shredhub. The test is designed in a way that involves the modification of the user interface, implementing a new business process, and alteration of the database. The results for this test outlines the number of code statements that were added and modified, and the programming language(s) that were used to implement the feature. Also, because code quality is somewhat difficult to measure, some significant properties are pointed out for each result. The new user feature that was implemented is given below.
+
+\paragraph{User feature: The Guitar Showroom}
+The Guitar showroom is part of the user's profile page, where the user can have pictures of his guitars,  and other users can view the images one-by-one by dragging them to the left or right. The scrolling must be highly interactive, meaning no page refresh can happen.  Also, for every picture, the user can choose to ``dig'' the guitar. By clicking ``dig'', the guitar earns a ``dig'' point. Dig points is a way for the user to show that he likes the guitar. Each time a user digs a guitar, the owner also earns one experience point. The user is not allowed to dig one of his own guitars. 
+
+For testing purposes, a set of the existing test Shredders are to add an image for one of their guitars, and a fictive dig-value for it is given (i.e changing some of their guitars to showroom guitars).
+
+\subsubsection{Result for Architecture 1.0}
+%
+%In Shredder.JSP, 47 lines was added to display the guitars in HTML + 1 line modified for maintainability of the list of guitars.
+%In Shredder.JSP 81 lines of JavaScript was added to implement highly interactive behavior. No code-reusing techniques was successfully applied.
+%In ShredderController: 10 lines to handle HTTP request and call business logic function.
+%In ShredderService: 16 lines to implement biz function and call db to persist.
+%In ShredderDAOImpl: 9 lines to implement the SQL call + 4 line to maintain the other sql calls that uses guitar for Shredder.
+%In PostgresDatabase: GuitarForShredder table had to be altered (=2 SQL lines added)
+%In ShredderMapper: 4 Lines added to map the new GuitarForShredder table. + One line was deleted (maintainability).
+%A new domain object had to be implemented: GuitarForShredder: 34 lines.
+
+The code that was added and modified in order to implement the feature is given in the table below:
+\begin{description}
+  \item[JSP] + 47 lines (HTML + JSP script statements)
+  \item[JavaScript] + 81 lines. 
+  \item[Java] + 73 lines, - 10 lines, + 1 class
+  \item[SQL] + 1 table, - 1 column + 1 column migration for every Shredder.guitars[] 
+\end{description}
+
+In the front-end, a set of new specialized and tightly coupled JavaScript functions were added to the end of the Shredder.JSP file. The amount of such specialized and independent JavaScript functions that doesn't have any  structure or reusable modules are starting to add up. If more such user-interactive behavior is to be added later, the result will possibly continue and add up in terms of tangled and inflexible, specialized JavaScript code. The back-end, however, did not require much modification, except for the database mapping code that was required in order to handle the change in the SQL structure.
+
+In the Java codebase, a new controller handler, service function and DAO function was implemented. In addition, the ShredderMapper class had to be modified in order to handle the update in the SQL structure. Also, a new domain class had to be created to hold the new SQL update: \textbf{GuitarForShredder.java}. Now, every Shredder has an array of GuitarForShredder objects, as opposed to earlier, when every Shredder had a simple String array of guitar names. 
+
+In SQL, a new table was generated to hold an image string, digs int, and name string, and a reference to the Shredder who owns the guitar. Previously every Shredder table had a simple array of strings that represented the guitars they own. Now, in order to implement the new update in SQL, I first had to create the new table GuitarForShredder, then I had to move the data from each shredder.guitars column into a new guitarForShredder row. Finally the old shredder.guitars column was deleted. The alteration of a Shredder's guitars is given in the example below: 
+\begin{lstlisting}[language=SQL]
+// Old Shredder table (only the guitars part):
+Column	| Type	|
+guitars	| text[] 	|
+
+// new guitarsForShredder table
+Column	| Type				|
+guitar	| character varying(50) 	|
+shredderid	| integer				|
+imgpath    | character varying(20) 	|
+digs      	| integer				|
+\end{lstlisting}
+
+
+
+%
+%Important things:
+%Had to add many new javascript functions. The size of the javascript code base is starting to grow %without structure. It is turning into spagetti code, because they don't have any structure and contains %both js, JSP and HTML. Some modification had to be implemented on the server side, this concerns %especially the database where the SQL table had to be modified, and the mapping required a lot of %code, including the creation of a new Domain class to wrap guitar for shredder object. Otherwise fairly %easy to add the new functionality on the backend.
+
+%Sum: \textit{Added: 203 lines, Modified: 6 lines}
+
+\subsubsection{Result for Architecture 2.0}
+%In the Shredder.HTML: Added 40 lines of HTML to display the guitars, + 4 lines modified displaying a different list of guitars (maintainability).
+%In Shredder.model.js: 14 lines (increase shredder level was reused). Not include error message if same user tries to add.
+%In ShredderView: 74 for mouse events and moving image. No need to do more then mouse event stuff and sliding image stuff. Listening to change events already happens, so the UI changes whenever a digg event is created.
+%No need to modify anything. Models and views are very open for extensions. Adding new UI changes was just to add more event handlers. An event handler calls a model function for business functions. the business function triggers an event when it finishes. The view listens to this event and rerenders automatically when the model causes a change that requires the view to render. This was already implemented ( view listens for update in shredder level events and renders thereafter). Should actually use mediator here! Use this instead of listening to change events directly.
+%In ShredderController: 13 lines for handling api call and calling db.
+%In Shredder.js : 6 lines for calling db. no need to change the database itself. Could added more control statements but the basic functionality is there. No modification of database or api needed.
+%
+%Sum: \textit{Added 148 lines, Modified: 4 lines}
+
+The code that was added and modified in order to implement the feature is given in the table below:
+\begin{description}
+  \item[HTML] + 40 lines - 4 lines
+  \item[JavaScript App] + 88 lines. 
+  \item[JavaScript API] + 19 lines
+\end{description}
+
+In the \textit{App}, the new view logic code was added to an existing module. A couple of new event-handlers were added to the Shredder view, and a business operation was added to the Shredder model. Part of the business rules had to be duplicated to the back-end, to avoid illegal misuse.
+
+On the back-end, there was no need to alter the database, because of MongoDB's flexibility: Previously, every Shredder had an array of guitars as strings that represent their list of guitars. Now, for every guitar that is to include an image and a dig int, the array index that used to represent that particular guitar could simply be altered to be a nested JSON object inside the array, instead of a simple string. This would only have to be altered for those test Shredders that were to change their old guitar from being just a name, into a JSON object with name, image and dig value. There was no need to alter any of the other Shredders, or even alter any of the CRUD operations that touches the Shredder object. The alteration of a Shredder can be seen in the code below:
+\begin{lstlisting}
+// Old guitar array:
+ Shredder {
+	guitars : [``Gibson Les paul'', ``Fender Stratocaster'']
+}
+
+// Showroom guitar
+Shredder {
+	guitars: [``Gibson Les Paul'',
+	{ name : ``Fender Stratocaster'',
+	image : ``fenderStrat.jpg'',
+	diggs: 34
+	}]
+}
+\end{lstlisting}
+
+The only modification needed at all was actually in the HTML template that uses the list of guitars: an if-else block had to be added in order to check if a guitar is a string or a JSON object. Hence the -4 HTML lines in the listing above.
+
+Also, the back-end had was given a new REST api function to handle the database update for adding a dig. 
+
+The code that was implemented for these two tests can be seen at the end of Appendix A and B.
+
+\section{Summary}
+In this chapter we have looked at the tests that were made in order to analyze and compare the two prototypes. Five different tests were created that analyzes performance, scalability and code flexibility/simplicity.
+
+\subsection{Performance Results}
+For the page creation tests, Architecture 2.0 was generally faster because it only has to create the part of the HTML that was meant to change, which is done quickly inside the browser. Architecture 1.0 has to create the whole page in every request,  which also entails a complete browser rendering process (page reload). 
+
+In the interactive user-action tests, Architecture 1.0 was slower in cases where it did HTML form-submits, because it lead to the generation of a whole new page. In other cases, the results were fairly equal, but a bit better for Architecture 1.0 because executes less JavaScript executions than Architecture 2.0.
+
+In the database tests, the results were fairly equal, but the NoSQL solution is somewhat slow in queries that requires manual join operations. In other cases it turned out faster then the SQL database.
+
+
+\subsection{Scalability Results}
+In the scalability tests, Architecture 2.0 came out the best, simply because the server does a lot less processing. Architecture 1.0's throughput was also significantly lower when the amount of users was high, and in addition, Architecture 2.0 managed to serve almost twice as many simultaneous users as Architecture 1.0. 
+
+\subsection{Code Quality Results}
+The code quality test showed that the NoSQL solution was more flexible then SQL; because of its schema-less approach, no table alteration or data migration was needed when parts of the domain had to change. The amount of code needed for Architecture 2.0 was also less then in Architecture 1.0, thus one could argue the codebase is somewhat simpler. Much of the reason is that Architecture 2.0 avoids the tedious marshalling of objects that are sent from client to server, and server to database. Also, adding more JavaScript to Architecture 1.0 resulted in an increase in the number of specialized and non-reusable functions. However, in Architecture 2.0, some business rules had to be duplicated on the back-end.
+
+
+
+% Page: arc 2 best, but arc 1 best for first one
+% User interactivity: % arc 2 best when arc 1 did form req. else arc 1 with only minor diff
+% Scalability: arc 2: simple stuff done on serve. arc 1 also slow under 100 +
+% DB: arc 2 slow for man join. faster when join avoided
+% Code quality: Arc 1 had to modify sql and sql mapping. js code very specialized and added to the amount of js functions without reuse. arc 2 no mod db, js reuse success. 
+
+

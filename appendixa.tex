@@ -1,0 +1,408 @@
+\chapter{Appendix A}
+\section{Architecture 1.0 - Presentation Layer Example}
+\label{sec:apres}
+In this section we will see what happens in the controller when a Url request comes in. An example controller, and a controller handler is given in the code below. Extra comments are added to explain important things. Each controller has references to the data source layer, through various service pointers (annotated with @Autowired). Also, each controller class maps to a coarse grained URL that references a particular domain, and each controller handler maps to a fine-grained URL that references a particular operation on that domain. The example shows how the follow-shredder action is implemented in the presentation layer.
+		
+\begin{lstlisting}
+
+// Handles all Url requests for www.shredhub.com/shredder*
+@RequestMapping("/shredder")
+@Controller
+public class ShredderController {
+		
+	// Entrance to the domain logic layer
+	@Autowired
+	private ShredderService shredderService;
+			
+	// Handles a url requests for www.shredhub.com/shredder/<someFaneeId>/?action=follow
+	@RequestMapping(value = "/{faneeId}", method = RequestMethod.POST, params = "action=follow")
+	public String followShredder(@PathVariable int faneeId, Model model, HttpSession session) {
+		Shredder user = (Shredder) session.getAttribute("user");
+		List <Shredder> shreddersFanees = (List <Shredder>) session.getAttribute("fanees");
+		try {
+			
+			// Delegate to the business operation
+			List <Shredder> updatedFaneesList = shredderService.createFaneeRelation(user(), faneeId, shreddersFanees);
+			
+			// Update the session 
+			session.setAttribute("fanees",updatedFaneesList);
+			
+			// Return the view that displays a list of 20 Shredders
+			return this.getShreddersAndReturnShreddersView(model, session);
+			
+		} catch (IllegalShredderArgumentException e) {
+			// Something wrong happened in the business operation. Return the error-page view
+			model.addAttribute("errorMsg", e.getMessage());
+			return "errorPage";
+		}
+	}}	  
+\end{lstlisting}
+If the business operation that was called succeeded, the controller calls a function that does the following:
+\begin{enumerate}
+\item{} Set p = the current page number stored in the HttpSession object
+\item{} Ask the logic layer to fetch a list of 20 Shredders, starting from page num = p
+\item{} Put the result list on the Model : model.addAttribute(``shreds'', resultList)
+\item{} return the String ``shredders''
+\end{enumerate}
+The returning String is picked up by SpringMVC's View Resolver which is configured to map a Java String to an associated JSP file. Thus the View Resolver will look for a view names ``shredders.jsp'', or ``errorPage.jsp'' in case the error view is returned from the handler, and it will render this JSP page together with the model object, resulting in an HTML page that is sent back to the client user. 
+
+
+\section{Architecture 1.0 - View Logic Example}
+\label{sec:aview}
+This example shows how Architecture 1.0 uses three languages to implement view logic; HTML, JSP and JavaScript. The example shows the a simplified version of how a Shred-video is displayed (called a Shred modal). If a user rates or comments the Shred, the new result (I.e updated rating value or the new comment) has to be displayed very quickly in order to achieve proper responsive behavior. This could be solved the usual way by using form-submits, but in this case, this is not good enough, because it results in a complete page refresh in the browser. Everywhere else in the app however, regular form submits are ok.
+
+\begin{lstlisting}[language=html]
+	<srcipt type=``text/javascript''>
+		function commentShred(shredId, commentText) {
+			// Create the url that calls the controller handler on the server
+			var baseUrl = "<c:url value='/shred/'/>" + shredId;
+			var url = baseUrl + "/comment/?text=" + commentText;
+	
+			// Send the Ajax request to the server as a Http post request.
+			// The result from the server is the Shred with the list of comments 
+			// updated with the new comment 
+			$.post(url,
+			
+			// This function is called when the server's response comes back
+			function(shred) {				
+				// get the last comment from the shred, I.e the one the User just created
+				var lastComment = _.last(shred.shredComments); 
+				
+				// Create a comment as an html string,
+				// that is to be injected into the DOM tree
+				var htmlString = '<tr><td>' + lastComment.text + 
+       			        '</td><td>' + lastComment.commenter.username + 
+				'</td><td>' + new Date(lastComment.timeCreated).toUTCString() + '</td>'+
+				'<td><button type="button" class="close"
+				 onClick="deleteComment(' + last.id + ', ' + data.id + ');" >x</button></td></tr>'
+				 
+				 // Append the Html to the table of comments
+				$('#commentTable tbody').append(htmlString);
+			});
+	}
+	
+	function rateShred(shredId, commentText) {
+		// I have omitted the source code for this example,
+		// But it's very similar to the function above
+	}
+</script>
+
+	<div class="videoView">
+		<video id="videoInModal" src=``<c:url value="/resources/videos/"/>''$										{shred.videoPath''</video>
+			<p> Created at: ${shred.timeCreated} </p>
+			<p">Number of raters:${shred.rating.numberOfRaters}</p>
+			<p>Rating:${shred.rating.rating}</p>
+			
+			<p>Rate it:
+			 <input type="range" id="rateValue" min="0" max="10" name="rating" value="5">
+			<button id="rateButton"
+				onclick="rateShred($('#rateValue').val()); return false;">
+			Rate</button>
+			
+			<p>Write a comment</p>
+			<input type="text">
+			<button id="commentButton"
+			onclick="commentShred($('#shredCommentText').val());
+			 return false;">
+			 Comment</button>
+			
+			<h3>Comments</h3>
+			<table id="commentTable">
+			<thead>
+				<tr>
+					<th>Text</th>
+					<th>By</th>
+					<th>At</th>
+				</tr>
+			</thead>
+			<tbody>
+				<c:forEach items="${currShred.shredComments}" var="c">
+					<tr>
+					<td> ${c.text} </td>
+					<td> ${c.commenter.username} </td>
+					<td> ${c.timeCreated} </td>
+					</tr>
+				</c:forEach>
+			</tbody>
+			</table>
+	</div>
+\end{lstlisting}
+
+\section{Architecture 1.0 - Domain Logic Layer Example}
+\label{sec:abiz}
+This example shows a typical business operation implemented in the domain logic layer. This function is called by the controller handler that receives requests for adding a new shred rating. At first, it tries to fetch the Shred from the database, before it performs some input validation on the data it received. If all went well, the service function will set the new rating and persist the result back to the database. Then it will fetch the Shredder who initially created the Shred in order to increase the Shredder's experience points. Finally it will persist the Shredder back to the database. 
+	
+\begin{lstlisting}
+	@Service
+	@Transactional( readOnly=true )
+	public class ShredServiceImpl implements ShredService {
+	
+		// Data source reference
+		@Autowired
+		private ShredDAO shredDAO;	
+		
+		/**
+		* This adds a new rating to a Shred. 
+		* When a shred is rated, the shred will gain a higher total rating, and
+		* the shredder who made the shred also achieves
+		* more experience points. Note that I don't check if the one who rates the 
+		* Shred is the one who created it. This is a business rule that should be implemented
+		* here, inside the business operation. However, for simplicity I have avoided it.
+		*/
+		@Transactional ( readOnly = false )
+		public void rateShred(int shredId, int newRate) throws IllegalShredArgumentException {
+			Shred shred = shredDAO.getShredById(shredId);
+			if ( shred == null ) {
+				throw new IllegalShredArgumentException("Shred with id: " + shredId + " does not exist");
+			}
+			if ( newRate < 0 || newRate > 10 ) {
+				throw new IllegalShredArgumentException("Illegal rate value!");
+			}
+	
+			// Here I could use the domain model pattern so that the
+			// shred object itself knows how to set its own rating.
+			// But I choose to follow the service layer pattern, where all the logic
+			// is implemented in this service operation
+			ShredRating currentRating = shred.getRating();
+			currentRating.setNumberOfRaters(currentRating.getNumberOfRaters() + 1);
+			currentRating.setCurrentRating(currentRating.getCurrentRating()+newRate);
+			
+			// store the result in the database
+			shredDAO.persistRate(shredId, currentRating);		
+			
+			// Fetch the complete owner (Shredder) object from the database
+			Shredder shredder = shredderDAO.getShredderById(shred.getOwner().getId());
+			
+			// Uses a utility class that is shared by all the service classes
+			// in order to update the shredder level
+			UpdateShredderLevel usl = new UpdateShredderLevel(shredder, newRate);
+			usl.advanceXp();
+			
+			shredderDAO.persistShredder( shredder);
+		}
+	}
+	\end{lstlisting}
+	
+\section{Architecture 1.0 - Add Dig User-feature}
+In this section, we look at how the Add dig user-feature was implemented. The example starts with the JSP page that visualizes the feature, and the JavaScript that handled the interactive behavior. Note that these are JavaScript functions that contains no modules or namespace declaration. They are just a set of tightly-coupled functions. After this the example shows the implementation on the back-end.
+
+\begin{lstlisting}
+
+// In the Shredder.jsp
+<div class="container fullWidth">
+	<hr class="soften">
+
+	<h2>Guitar Showroom</h2>
+	<br>
+
+	<div class="row-fluid">
+		<ul class="thumbnails">
+
+			<li class="span1"></li>
+			<li class="span1 arrow-img">
+			<a href="" data-bypass="true" class="prevImage">
+				 <i class="icon-backward"></i>
+			</a></li>
+
+			<li class="span8">
+				<div class="listContainer">
+					<div id="list">						
+					<c:forEach var="guitar" items="${currentShredder.guitars}">
+						
+						<c:if test="${guitar.imgPath != null}">
+						<div class="thumbnail">
+							<img src="<c:url value="/resources/images/"/>${guitar.imgPath}"
+								class="dragImage">
+							<p>
+							<small>Drag image to see next</small>
+							</p>
+							<h3>${guitar.name}</h3>
+							<p>Digs: ${guitar.diggs} </p>
+							<form method="POST" 
+								action="<c:url value='/'/>shredder/${currentShredder.id}/guitar/${guitar.name}/dig">
+									<button class="btn btn-success">Dig it</button>
+							</form>
+						</div>
+						</c:if>
+					</c:forEach>
+					</div>
+				</div>
+			</li>
+
+			<li class="span1"></li>
+			<li class="span1 arrow-img"><a href="" data-bypass="true"
+				class="nextImage"> <i
+					class="icon-forward"></i>
+			</a></li>
+		</ul>
+	</div>
+</div>
+	
+<script type="text/javascript">	
+	$(function(){
+		
+		var movedRight = false;
+		var mouseIsDown = false;
+		var slideWidth = 610;
+		var slideNumber = 0;
+		var xCord = 0;
+		
+		$('.prevImage').on('click', function(event) {
+			event.preventDefault();
+			slideLeftOrRight(-1);
+		}); 
+		
+		$('.nextImage').on('click', function(event) {
+			event.preventDefault();
+			slideLeftOrRight(1);
+		});
+		
+		$('.dragImage').on('mousemove', function(event) {
+		      event.preventDefault();
+		      var currXcord = event.pageX;
+		      if (mouseIsDown) {
+		        if ( (xCord - currXcord) > 40 ) {       
+		          movedRight=true;
+		        }else if ( (xCord - currXcord) < 40  ){
+		          movedLeft=true;      
+		        }
+		      }
+		    });
+		
+		
+		$('.dragImage').on('mousedown', function(event) {
+		      event.preventDefault();
+		      mouseIsDown = true;
+		      xCord = event.pageX;
+		});
+		
+		$('.dragImage').on('mouseup', function(event) {
+		      mouseIsDown = false;
+		      if ( movedRight == true) {
+		        movedRight = false; 
+		        slideLeftOrRight(1);
+		      }else if ( movedLeft == true )  {
+		        movedLeft = false;
+		        slideLeftOrRight(-1);
+		      }
+		});
+		
+		function slideLeftOrRight(step) {
+		   slideNumber += step; // 1 / 2 / 3 / 4 / ... n
+		   var containingUL = document.getElementById("list");
+		   slideTo(containingUL, -slideNumber * slideWidth);
+		}
+		
+
+	function slideTo(el, left) {
+		var steps = 10;
+		var timer = 25;
+		var elLeft = parseInt(el.style.left) || 0;
+		var diff = left - elLeft;
+		var stepSize = diff / steps;
+
+		function step() {
+			elLeft += stepSize;
+			el.style.left = elLeft + "px";
+			if (--steps) {
+				setTimeout(step, timer);
+			}
+		}
+		step();
+	}
+
+	function changeImg(event, step) {
+		event.preventDefault();
+
+		slideNumber += step;
+		var containingUL = document.getElementById("list");
+		slideTo(containingUL, -slideNumber * slideWidth);
+	}
+	}); 
+</script>
+
+
+// In ShredderController
+@RequestMapping( value ="/{id}/guitar/{guitaName}/dig", method = RequestMethod.POST)
+public String digGuitar(@PathVariable String id, @PathVariable String guitaName,
+	HttpSession session,Model model) {
+	Shredder shredder = (Shredder) session.getAttribute("shredder");
+	boolean res = shredderService.addDiggForGuitar(shredder, id, guitaName);
+	if ( res ) {
+		return "redirect:/shredder/" + id;
+	}else {
+		return "errorPage"; // Add error message
+	}
+}
+	
+	
+// In ShredderService
+@Transactional(readOnly=false)
+public boolean addDiggForGuitar(Shredder user, String id, String gIndex) {
+	if ( !(user.getId() + "").equals(id) ){
+		
+		boolean sqlRes = shredderDAO.addDiggForGuitar(id, gIndex);
+		if ( sqlRes ) {
+			Shredder shredder = shredderDAO.getShredderById(Integer.parseInt(id));
+		
+			// Update shredder level
+			UpdateShredderLevel usl = new UpdateShredderLevel(shredder, 1 );
+			boolean res = usl.advanceXp();			
+			shredderDAO.persistShredder( shredder);
+			return true;
+		}
+	}
+	return false;
+}
+
+
+// In UpdateShredderLevel
+public UpdateShredderLevel(Shredder sh, int newPoints) {
+	this.shredder = sh;
+	this.newPoints = newPoints;
+}
+	
+/** 
+ * @return true if leveled up, false otherwise
+ */
+public boolean advanceXp() {
+	ShredderLevel sl = shredder.getLevel();
+	if ( shouldLevelUp(sl.getXp())) {
+		doLevelUp(sl);
+		return true;
+	} else {
+		sl.setXp( sl.getXp() + newPoints);
+		return false;
+	}		
+}
+
+private void doLevelUp(ShredderLevel sl) {
+	sl.setLevel( sl.getLevel() + 1);
+	sl.setXp((sl.getXp() + newPoints) % POINTS_FOR_NEW_LEVEL);		
+}
+
+private boolean shouldLevelUp(double xp) {
+	return (( xp + newPoints)) >= 100;
+}
+
+
+// In ShredderDAOImpl
+public boolean addDiggForGuitar(String id, String guitarName) {
+	int shredderId = Integer.parseInt(id);
+	String SQL = "UPDATE GuitarForShredder SET Digs = Digs+? WHERE ShredderId=? AND Guitar=?";
+	try{
+		jdbcTemplate.update(SQL, 1, shredderId, guitarName);
+		return true;
+	}catch(DataAccessException e) {
+		return false;
+	}
+}
+
+public void persistShredder(Shredder shredder) {
+	jdbcTemplate.update("UPDATE Shredder SET Username=?, Birthdate=?,Email=?,Password=?" +
+			",Description=?,Country=?,ProfileImage=?,ExperiencePoints=?, ShredderLevel=?" +
+			"WHERE Id=?", shredder.getUsername(), shredder.getBirthdate(), shredder.getEmail(),
+			shredder.getPassword(), shredder.getDescription(), shredder.getCountry(), shredder.getProfileImagePath(),
+			shredder.getLevel().getXp(), shredder.getLevel().getLevel(), shredder.getId());
+}
+\end{lstlisting}
